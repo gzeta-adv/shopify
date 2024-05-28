@@ -1,5 +1,5 @@
 import scripts from '@/scripts'
-import { exit, toCamelCase, toKebabCase } from '@/utils/helpers'
+import { exit, toCamelCase, toKebabCase } from '@/utils'
 
 const names = Object.keys(scripts).map(toKebabCase)
 const message = `Available scripts: ${names.join(', ')}`

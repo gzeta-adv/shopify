@@ -56,6 +56,11 @@ export const times = async <T>(n: number, callback: (i: number) => T): Promise<T
   Promise.all(range(1, n).map(i => callback(i)))
 
 /**
+ * Convert a Shopify ID to a number ID.
+ */
+export const toID = (shopifyID: string): number => parseInt(shopifyID.split('/').pop() as string, 10)
+
+/**
  * Convert a string to camelCase.
  */
 export const toCamelCase = (s: string): string => s.toLowerCase().replace(/([-_:]+\w)/g, m => m.slice(-1).toUpperCase())
@@ -117,11 +122,12 @@ export const transformKeys = <T extends Record<string, any>>(
 export const resolveNodes = <T extends Record<string, any>>(nodes: T[]): T[] =>
   nodes?.map(node => {
     for (const key of Object.keys(node)) {
-      const nodeValue: any = node[key as keyof typeof node]
+      const nodeValue = node[key as keyof typeof node]
 
       if (Object.hasOwn(nodeValue, 'edges')) {
+        const newNodeValue = nodeValue.edges.map(({ node }: { node: T }) => node)
         // @ts-expect-error - key is a valid key of node
-        node[key] = nodeValue.edges.map(({ node }) => node)[0]
+        node[key] = Array.isArray(newNodeValue) ? resolveNodes(newNodeValue) : newNodeValue
       }
     }
     return node

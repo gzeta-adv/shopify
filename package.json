@@ -7,7 +7,11 @@
     "name": "GZETA",
     "url": "https://gzeta-adv.it"
   },
-  "packageManager": "pnpm@8.10.5+sha1.4370a069f21873a0ad83c785b8048ed8caf6e6e9",
+  "packageManager": "pnpm@8.10.5",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/gzeta-adv/wikini.git"
+  },
   "scripts": {
     "shopify": "shopify",
     "build": "shopify app build",
