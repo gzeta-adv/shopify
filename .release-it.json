@@ -1,0 +1,29 @@
+{
+  "git": {
+    "commitMessage": "chore(release): v${version}",
+    "tagAnnotation": "v${version}",
+    "push": true
+  },
+  "github": {
+    "release": true,
+    "releaseName": "v${version}",
+    "autoGenerate": true
+  },
+  "npm": {
+    "publish": false
+  },
+  "@release-it/bumper": {
+    "out": "package.json"
+  },
+  "@release-it/conventional-changelog": {
+    "preset": {
+      "name": "conventionalcommits"
+    },
+    "header": "# Changelog",
+    "infile": "CHANGELOG.md"
+  },
+  "hooks": {
+    "after:init": "pnpm lint",
+    "after:release": "echo Successfully released ${name}@${version}."
+  }
+}

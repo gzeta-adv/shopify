@@ -2,6 +2,7 @@ coverage/
 extensions/*/build/
 logs/
 node_modules/
+private/
 .DS_Store
 .env
 .env.*
