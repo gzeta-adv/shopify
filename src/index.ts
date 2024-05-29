@@ -1,19 +1,19 @@
-import scripts from '@/scripts'
+import actions from '@/actions'
 import { exit, toCamelCase, toKebabCase } from '@/utils'
 
-const names = Object.keys(scripts).map(toKebabCase)
-const message = `Available scripts: ${names.join(', ')}`
+const names = Object.keys(actions).map(toKebabCase)
+const message = `Available actions: ${names.join(', ')}`
 
 const [cmd, arg, ...opts] = process.argv.slice(2)
-if (!cmd) exit(`No script provided\n${message}`)
+if (!cmd) exit(`No action provided\n${message}`)
 if (opts.length) exit(`Unrecognized options: ${opts.join(' ')}`)
 
-const userScript = toCamelCase(cmd) as keyof typeof scripts
-const script = scripts[userScript] as (...args: string[]) => Promise<void>
-if (!script) exit(`Action ${cmd} not found\n${message}`)
+const userAction = toCamelCase(cmd) as keyof typeof actions
+const action = actions[userAction] as (...args: string[]) => Promise<void>
+if (!action) exit(`Action ${cmd} not found\n${message}`)
 
 const exec = async (): Promise<void> => {
-  await script(arg)
+  await action(arg)
 }
 
 exec()
