@@ -1,1 +1,1 @@
-export type { CreateRecordsOptions, FieldSet, Record, Records } from './records'
+export type * from './records/types'

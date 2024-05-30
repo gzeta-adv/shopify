@@ -3,7 +3,7 @@ import { client } from '#airtable'
 import type { FieldSet, Records } from '#airtable'
 import { chunks } from '@/utils'
 
-export interface CreateRecordsOptions<T extends FieldSet> {
+interface CreateRecordsOptions<T extends FieldSet> {
   tableId: string
   records: T[]
 }
