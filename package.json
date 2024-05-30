@@ -14,11 +14,11 @@
   },
   "scripts": {
     "shopify": "shopify",
-    "build": "shopify app build",
-    "dev": "shopify app dev",
     "info": "shopify app info",
-    "generate": "shopify app generate",
+    "dev": "shopify app dev",
+    "build": "shopify app build",
     "deploy": "shopify app deploy",
+    "generate": "shopify app generate",
     "action": "ts-node src/index.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
@@ -26,6 +26,8 @@
   },
   "dependencies": {
     "@shopify/admin-api-client": "^0.2.9",
+    "@shopify/ui-extensions": "2024.4.x",
+    "airtable": "^0.12.2",
     "dotenv": "^16.4.5"
   },
   "devDependencies": {

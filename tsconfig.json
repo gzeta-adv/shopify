@@ -6,7 +6,11 @@
     "module": "commonjs",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["src/*"],
+      "#airtable": ["src/apis/airtable"],
+      "#airtable/*": ["src/apis/airtable/*"],
+      "#shopify": ["src/apis/shopify"],
+      "#shopify/*": ["src/apis/shopify/*"],
     },
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,

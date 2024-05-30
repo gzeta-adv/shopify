@@ -13,7 +13,7 @@ export const env = (key: string): string => {
  * Log an error message and exit the process.
  */
 export const exit = (message?: string, code: number = 1): void => {
-  if (message) logger.error(`❌ ${message}\n`)
+  if (message) logger.error(message)
   process.exit(code)
 }
 
@@ -61,6 +61,15 @@ export const times = async <T>(n: number, callback: (i: number) => T): Promise<T
 export const toID = (shopifyID: string): number => parseInt(shopifyID.split('/').pop() as string, 10)
 
 /**
+ * Convert a string to title case.
+ */
+export const titleize = (s: string): string =>
+  s
+    .replace(/_-:/g, ' ')
+    .replace(/[A-Z]/g, m => ` ${m}`)
+    .replace(/\b\w/g, c => c.toUpperCase())
+
+/**
  * Convert a string to camelCase.
  */
 export const toCamelCase = (s: string): string => s.toLowerCase().replace(/([-_:]+\w)/g, m => m.slice(-1).toUpperCase())
@@ -93,11 +102,21 @@ export const toSnakeCase = (s: string): string =>
     .replace(/-/g, () => '_')
 
 /**
+ * Convert a string to title case.
+ */
+export const toTitleCase = <T extends string>(s: T): string =>
+  s
+    .replace(/_-:/g, ' ')
+    .replace(/.[A-Z]/g, m => ` ${m}`)
+    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim()
+
+/**
  * Transform the keys of an array of objects to a given case.
  */
 export const transformKeys = <T extends Record<string, any>>(
   array: T[],
-  mode: 'camel' | 'colon' | 'kebab' | 'snake' = 'camel'
+  mode: 'camel' | 'colon' | 'kebab' | 'snake' | 'title' = 'camel'
 ): T[] =>
   array.map(object =>
     Object.keys(object).reduce((transformed, key) => {

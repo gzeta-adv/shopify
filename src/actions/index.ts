@@ -1,4 +1,4 @@
-import { unpublishOutdatedCollections } from './unpublish-outdated-collections'
+import { syncCollectionPublications } from './sync-collection-publications'
 
-export { unpublishOutdatedCollections }
-export default { unpublishOutdatedCollections }
+export { syncCollectionPublications }
+export default { syncCollectionPublications }

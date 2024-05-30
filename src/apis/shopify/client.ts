@@ -1,12 +1,11 @@
 import { createAdminApiClient } from '@shopify/admin-api-client'
+import { API_VERSION, storeDomain } from '#shopify/data'
 import { env } from '@/utils'
 
-const API_VERSION = '2024-04'
-const STORE_DOMAIN = env('SHOPIFY_STORE_DOMAIN')
-const ACCESS_TOKEN = env('SHOPIFY_ACCESS_TOKEN')
+export const ACCESS_TOKEN = env('SHOPIFY_ACCESS_TOKEN')
 
 export const client = createAdminApiClient({
   apiVersion: API_VERSION,
-  storeDomain: STORE_DOMAIN,
+  storeDomain,
   accessToken: ACCESS_TOKEN,
 })

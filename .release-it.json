@@ -1,4 +1,8 @@
 {
+  "hooks": {
+    "after:init": "pnpm lint",
+    "after:release": "echo Successfully released ${name}@${version}."
+  },
   "git": {
     "commitMessage": "chore(release): v${version}",
     "tagAnnotation": "v${version}",
@@ -21,9 +25,5 @@
     },
     "header": "# Changelog",
     "infile": "CHANGELOG.md"
-  },
-  "hooks": {
-    "after:init": "pnpm lint",
-    "after:release": "echo Successfully released ${name}@${version}."
   }
 }

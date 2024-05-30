@@ -2,7 +2,7 @@ name: Keep alive
 
 on:
   schedule:
-    - cron: 0 0 * * *
+    - cron: '0 0 1/7 * *'
 
 jobs:
   keep-alive:
