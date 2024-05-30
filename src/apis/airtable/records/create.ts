@@ -1,6 +1,7 @@
 import { client } from '#airtable'
 
 import type { FieldSet, Records } from '#airtable'
+import { chunks } from '@/utils'
 
 export interface CreateRecordsOptions<T extends FieldSet> {
   tableId: string
@@ -12,10 +13,8 @@ export const createRecords = async <T extends FieldSet>({
   records,
 }: CreateRecordsOptions<T>): Promise<Records<T>> => {
   const recordFields = records.map(record => ({ fields: record }))
-  try {
-    return await client<T>(tableId).create(recordFields, { typecast: true })
-  } catch (error) {
-    console.error(error)
-    return []
-  }
+  const recordChunks = chunks(recordFields, 10)
+
+  const results = await Promise.all(recordChunks.map(chunk => client<T>(tableId).create(chunk, { typecast: true })))
+  return results.flat()
 }

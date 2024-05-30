@@ -151,3 +151,14 @@ export const resolveNodes = <T extends Record<string, any>>(nodes: T[]): T[] =>
     }
     return node
   })
+
+/**
+ * Split an array into chunks of a given size.
+ */
+export const chunks = <T>(array: T[], size: number = 1): T[][] => {
+  const results = []
+  while (array.length) {
+    results.push(array.splice(0, size))
+  }
+  return results
+}
