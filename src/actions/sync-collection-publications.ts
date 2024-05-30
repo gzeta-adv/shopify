@@ -79,7 +79,6 @@ const fields = `
 `
 
 const countPublications = ({ resourcePublicationsV2 }: PublishCollection) => resourcePublicationsV2.length
-const hasProducts = ({ productsCount }: PublishCollection) => productsCount.count > 0
 const isObsolete = ({ metafields }: PublishCollection) => {
   const { value } = metafields.find(({ key }) => key === OUTDATED_KEY) || {}
   return value === 'true'
@@ -174,12 +173,9 @@ export const syncCollectionPublications = async () => {
   if (!publications.length) exit('No publications found. Exiting.')
 
   const publish = collections.filter(
-    collection =>
-      !isObsolete(collection) && hasProducts(collection) && countPublications(collection) < publications.length
+    collection => !isObsolete(collection) && countPublications(collection) < publications.length
   )
-  const unpublish = collections.filter(
-    collection => (isObsolete(collection) || !hasProducts(collection)) && countPublications(collection) > 0
-  )
+  const unpublish = collections.filter(collection => isObsolete(collection) && countPublications(collection) > 0)
 
   await updateCollections({ publish, unpublish }, publications)
 }
