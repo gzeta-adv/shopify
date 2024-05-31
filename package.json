@@ -13,20 +13,18 @@
     "url": "https://github.com/gzeta-adv/wikini.git"
   },
   "scripts": {
-    "shopify": "shopify",
     "info": "shopify app info",
     "dev": "shopify app dev",
     "build": "shopify app build",
     "deploy": "shopify app deploy",
     "generate": "shopify app generate",
-    "action": "ts-node src/index.ts",
+    "action": "ts-node actions/index.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "release": "dotenv release-it"
   },
   "dependencies": {
     "@shopify/admin-api-client": "^0.2.9",
-    "@shopify/ui-extensions": "2024.4.x",
     "airtable": "^0.12.2",
     "dotenv": "^16.4.5"
   },

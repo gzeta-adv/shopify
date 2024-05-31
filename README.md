@@ -20,17 +20,17 @@ To run one of the following actions, use the command:
 pnpm run action <workflow-name>
 ```
 
-### Sync Collection Publications
+### Sync Collections Status
 
-[![](https://github.com/gzeta-adv/wikini/actions/workflows/sync-collection-publications.yml/badge.svg)](https://github.com/gzeta-adv/wikini/actions/workflows/sync-collection-publications.yml)
+[![](https://github.com/gzeta-adv/wikini/actions/workflows/sync-collections-status.yml/badge.svg)](https://github.com/gzeta-adv/wikini/actions/workflows/sync-collections-status.yml)
 
 The action synchronizes the publications of a Shopify collection depending on one of its metafields. The operations are logged in an Airtable table.
 
 - **Command**: 
     ```sh
-    pnpm run action sync-collection-publications
+    pnpm run action sync-collections-status
     ```
-- **Workflow**: [`sync-collection-publications`](.github/workflows/sync-collection-publications.yml)
+- **Workflow**: [`sync-collections-status`](.github/workflows/sync-collections-status.yml)
 - **Environment variables**:
   - `AIRTABLE_API_KEY`
   - `AIRTABLE_BASE_ID`
