@@ -1,7 +1,9 @@
-import airtable, { FieldSet } from '#airtable'
-import shopify, { parseUserErrors, OUTDATED_KEY, RESOURCES_LIMIT, adminDomain } from '#shopify'
+import airtable from '#airtable'
+import shopify, { COLLECTION_METAFIELD, RESOURCES_LIMIT, adminDomain, parseUserErrors } from '#shopify'
 import { env, exit, logger, toID, toTitleCase } from '@/utils'
+import { Action } from './types'
 
+import type { FieldSet } from '#airtable'
 import type { Collection } from '#shopify'
 
 const TABLE_ID = env('AIRTABLE_LOGS_TABLE_ID')
@@ -56,7 +58,7 @@ interface PublishLogOptions {
 }
 
 const fields = `
-  metafields(first: 1, keys: ["${OUTDATED_KEY}"]) {
+  metafields(first: 1, keys: ["${COLLECTION_METAFIELD}"]) {
     edges {
       node {
         key
@@ -80,7 +82,7 @@ const fields = `
 
 const countPublications = ({ resourcePublicationsV2 }: PublishCollection) => resourcePublicationsV2.length
 const isObsolete = ({ metafields }: PublishCollection) => {
-  const { value } = metafields.find(({ key }) => key === OUTDATED_KEY) || {}
+  const { value } = metafields.find(({ key }) => key === COLLECTION_METAFIELD) || {}
   return value === 'true'
 }
 
@@ -158,7 +160,7 @@ const updateCollections = async (
 /**
  * Synchronize the publications of all collections in the Shopify store depending on a boolean metafield.
  */
-export const syncCollectionPublications = async () => {
+export const syncCollectionPublications: Action = async (): Promise<void> => {
   const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
   const collections = data?.collections?.nodes || []
   if (!collections.length) exit('No collections found.\n')

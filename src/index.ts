@@ -1,19 +1,21 @@
 import actions from '@/actions'
-import { exit, toCamelCase, toKebabCase } from '@/utils'
+import { exit, includesArray, toCamelCase, toKebabCase } from '@/utils'
 
-const names = Object.keys(actions).map(toKebabCase)
-const message = `Available actions: ${names.join(', ')}`
+const actionsMessage = `Available actions: ${Object.keys(actions).map(toKebabCase).join(', ')}`
+const argsMessage = (args: string[], fnArgs: string[]) =>
+  `Wrong arguments: ${args.filter(arg => !includesArray(fnArgs, [arg]))}\nAvailable arguments: ${fnArgs.join(', ')}\n`
 
-const [cmd, arg, ...opts] = process.argv.slice(2)
-if (!cmd) exit(`No action provided\n${message}`)
-if (opts.length) exit(`Unrecognized options: ${opts.join(' ')}`)
+const [workflow, ...args] = process.argv.slice(2)
+if (!workflow) exit(`No workflow provided\n${actionsMessage}\n`)
 
-const userAction = toCamelCase(cmd) as keyof typeof actions
-const action = actions[userAction] as (...args: string[]) => Promise<void>
-if (!action) exit(`Action ${cmd} not found\n${message}`)
+const action = toCamelCase(workflow) as keyof typeof actions
+const fn = actions[action]
+if (!fn) exit(`Action ${action} not found\n${actionsMessage}\n`)
+
+if (args.length && fn?.args?.length && !includesArray(fn.args, args)) exit(argsMessage(args, fn.args))
 
 const exec = async (): Promise<void> => {
-  await action(arg)
+  await fn(...args)
 }
 
 exec()

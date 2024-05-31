@@ -1,5 +1,5 @@
 /**
- * Get an environment variable or log an error and exit if it's missing.
+ * Get an environment variable or logs an error and exit the process if missing.
  */
 export const env = (key: string): string => {
   const value = process.env[key]
@@ -162,3 +162,8 @@ export const chunks = <T>(array: T[], size: number = 1): T[][] => {
   }
   return results
 }
+
+/**
+ * Check if an array includes all the specified values.
+ */
+export const includesArray = <T>(array: T[], values: T[]): boolean => values.every(value => array.includes(value))

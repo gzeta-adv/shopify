@@ -24,8 +24,12 @@ pnpm run action <workflow-name>
 
 [![](https://github.com/gzeta-adv/wikini/actions/workflows/sync-collection-publications.yml/badge.svg)](https://github.com/gzeta-adv/wikini/actions/workflows/sync-collection-publications.yml)
 
-The action synchronizes the publications of the collections in the Shopify store depending on a metafield. The output is logged in an Airtable table.
+The action synchronizes the publications of a Shopify collection depending on one of its metafields. The operations are logged in an Airtable table.
 
+- **Command**: 
+    ```sh
+    pnpm run action sync-collection-publications
+    ```
 - **Workflow**: [`sync-collection-publications`](.github/workflows/sync-collection-publications.yml)
 - **Environment variables**:
   - `AIRTABLE_API_KEY`
