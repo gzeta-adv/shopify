@@ -24,7 +24,7 @@
     "release": "dotenv release-it"
   },
   "dependencies": {
-    "@shopify/admin-api-client": "^0.2.9",
+    "@shopify/admin-api-client": "^1.0.0",
     "airtable": "^0.12.2",
     "dotenv": "^16.4.5"
   },
