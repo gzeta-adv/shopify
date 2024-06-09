@@ -1,4 +1,4 @@
-name: Sync collection publications
+name: Sync collections status
 
 on:
   workflow_dispatch:
@@ -6,7 +6,7 @@ on:
     - cron: '0 */3 * * *'
 
 jobs:
-  sync-collection-publications:
+  sync-collections-status:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,8 +18,8 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install
-      - run: pnpm run action sync-collection-publications
-        name: Run action sync-collection-publications
+      - run: pnpm run action sync-collections-status
+        name: Run action sync-collections-status
         env:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}
           AIRTABLE_BASE_ID: ${{ secrets.AIRTABLE_BASE_ID }}

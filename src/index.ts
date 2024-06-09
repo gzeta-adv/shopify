@@ -1,5 +1,7 @@
-import actions from '@/actions'
+import { syncCollectionsStatus } from '@/actions/sync-collections-status'
 import { exit, includesArray, toCamelCase, toKebabCase } from '@/utils'
+
+const actions = { syncCollectionsStatus }
 
 const actionsMessage = `Available actions: ${Object.keys(actions).map(toKebabCase).join(', ')}`
 const argsMessage = (args: string[], fnArgs: string[]) =>
@@ -10,7 +12,7 @@ if (!workflow) exit(`No workflow provided\n${actionsMessage}\n`)
 
 const action = toCamelCase(workflow) as keyof typeof actions
 const fn = actions[action]
-if (!fn) exit(`Action ${action} not found\n${actionsMessage}\n`)
+if (!fn) exit(`Action not found\n${actionsMessage}\n`)
 
 if (args.length && fn?.args?.length && !includesArray(fn.args, args)) exit(argsMessage(args, fn.args))
 

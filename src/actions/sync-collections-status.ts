@@ -1,10 +1,10 @@
 import airtable from '#airtable'
 import shopify, { COLLECTION_METAFIELD, RESOURCES_LIMIT, adminDomain, parseUserErrors } from '#shopify'
 import { env, exit, logger, toID, toTitleCase } from '@/utils'
-import { Action } from './types'
 
 import type { FieldSet } from '#airtable'
 import type { Collection } from '#shopify'
+import type { Action } from '@/types'
 
 const TABLE_ID = env('AIRTABLE_LOGS_TABLE_ID')
 
@@ -160,7 +160,7 @@ const updateCollections = async (
 /**
  * Synchronize the publications of all collections in the Shopify store depending on a boolean metafield.
  */
-export const syncCollectionPublications: Action = async (): Promise<void> => {
+export const syncCollectionsStatus: Action = async (): Promise<void> => {
   const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
   const collections = data?.collections?.nodes || []
   if (!collections.length) exit('No collections found.\n')
