@@ -27,7 +27,7 @@
     "arrow-body-style": [1, "as-needed"],
     "func-style": [2, "expression"],
     "max-lines": 2,
-    "no-console": [1, { "allow": ["error", "info", "warn"] }],
+    "no-console": [1, { "allow": ["error", "time", "timeEnd", "warn"] }],
     "no-var": 2,
     "object-curly-spacing": [2, "always"],
     "object-shorthand": [2, "always"],

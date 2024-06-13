@@ -1,4 +1,4 @@
-# See https://shopify.dev/docs/apps/tools/cli/configuration
+# Learn more about configuring your app at https://shopify.dev/docs/apps/tools/cli/configuration
 
 client_id = "129b38b0826589d3ecf41e0c5cc7e32d"
 name = "GZETA x Wikini"
@@ -6,17 +6,19 @@ handle = "gzeta-x-wikini"
 application_url = "https://shopify.dev/apps/default-app-home"
 embedded = true
 
+[build]
+dev_store_url = "gzeta-development-store.myshopify.com"
+include_config_on_deploy = true
+
 [access_scopes]
-scopes = ""
+# Learn more at https://shopify.dev/docs/apps/tools/cli/configuration#access_scopes
+scopes = "read_products"
 
 [auth]
 redirect_urls = ["https://shopify.dev/apps/default-app-home/api/auth"]
 
-[build]
-include_config_on_deploy = true
+[webhooks]
+api_version = "2024-04"
 
 [pos]
 embedded = false
-
-[webhooks]
-api_version = "2024-04"

@@ -1,12 +1,12 @@
-import airtable from '#airtable'
-import shopify, { COLLECTION_METAFIELD, RESOURCES_LIMIT, adminDomain, parseUserErrors } from '#shopify'
+import airtable from '@/clients/airtable'
+import shopify, { COLLECTION_METAFIELD, RESOURCES_LIMIT, adminDomain, parseUserErrors } from '@/clients/shopify'
 import { env, exit, logger, toID, toTitleCase } from '@/utils'
 
-import type { FieldSet } from '#airtable'
-import type { Collection } from '#shopify'
+import type { FieldSet } from '@/clients/airtable'
+import type { Collection } from '@/clients/shopify'
 import type { Action } from '@/types'
 
-const TABLE_ID = env('AIRTABLE_LOGS_TABLE_ID')
+const TABLE_ID = env('AIRTABLE_COLLECTION_STATUS_TABLE_ID')
 
 interface PublishCollection extends Collection {
   metafields: {
@@ -91,7 +91,7 @@ const createLog = ({ status, action, collection, message, publications, obsolete
   Status: toTitleCase(status) as PublishLog['Status'],
   Action: toTitleCase(action) as PublishLog['Action'],
   'Collection ID': toID(collection.id),
-  'Collection Title': collection.title,
+  'Collection Title': collection.title || '',
   'Collection URL': `https://${adminDomain}/collections/${toID(collection.id)}`,
   Obsolete: obsolete,
   'Products Count': collection.productsCount.count,
@@ -112,7 +112,6 @@ const updateCollections = async (
 
     if (!collections.length) {
       logger.notice(`No collections to ${action}.`)
-      logger.info()
       continue
     }
 
@@ -151,7 +150,6 @@ const updateCollections = async (
     }
 
     logger.notice(`${toTitleCase(action)}ed ${updatedCollections.length} out of ${collections.length} collections.`)
-    logger.info()
 
     await airtable.createRecords<PublishLog>({ tableId: TABLE_ID, records: logs })
   }
@@ -163,7 +161,7 @@ const updateCollections = async (
 export const syncCollectionsStatus: Action = async (): Promise<void> => {
   const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
   const collections = data?.collections?.nodes || []
-  if (!collections.length) exit('No collections found.\n')
+  if (!collections.length) exit('No collections found.')
 
   const publications = [
     ...new Set(
@@ -172,7 +170,7 @@ export const syncCollectionsStatus: Action = async (): Promise<void> => {
       )
     ),
   ]
-  if (!publications.length) exit('No publications found. Exiting.')
+  if (!publications.length) exit('No publications found.')
 
   const publish = collections.filter(
     collection => !isObsolete(collection) && countPublications(collection) < publications.length

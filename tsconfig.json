@@ -7,8 +7,6 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["src/*"],
-      "#airtable": ["src/clients/airtable"],
-      "#shopify": ["src/clients/shopify"],
     },
     "forceConsistentCasingInFileNames": true,
     "esModuleInterop": true,

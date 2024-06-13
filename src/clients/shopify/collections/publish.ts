@@ -1,7 +1,7 @@
-import { client } from '#shopify'
+import { client } from '@/clients/shopify'
 import { toTitleCase } from '@/utils'
 
-import type { Collection } from '#shopify'
+import type { Collection } from '@/clients/shopify'
 
 const getPublishOperation = (action: 'publish' | 'unpublish' = 'publish', fields?: string) => {
   const nodes = ['id', 'title', fields].filter(String).join('\n')

@@ -1,7 +1,7 @@
-import { client, RESOURCES_LIMIT } from '#shopify'
+import { client, RESOURCES_LIMIT } from '@/clients/shopify'
 import { resolveNodes } from '@/utils'
 
-import type { ClientResponse, Collection } from '#shopify'
+import type { ClientResponse, Collection } from '@/clients/shopify'
 
 /**
  * Request options for fetching collections using the Shopify Admin API.
@@ -73,7 +73,7 @@ export const fetchAllCollections = async <T extends Collection = Collection>({
     const { data, errors: error } = await fetchCollections<T>({ cursor, fields, limit })
 
     if (!data?.collections) {
-      if (errors) errors.push(error as any)
+      if (error) errors.push(error as any)
       continue
     }
 

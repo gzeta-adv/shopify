@@ -1,23 +1,17 @@
-import { syncCollectionsStatus } from '@/actions/sync-collections-status'
-import { exit, includesArray, toCamelCase, toKebabCase } from '@/utils'
-
-const actions = { syncCollectionsStatus }
-
-const actionsMessage = `Available actions: ${Object.keys(actions).map(toKebabCase).join(', ')}`
-const argsMessage = (args: string[], fnArgs: string[]) =>
-  `Wrong arguments: ${args.filter(arg => !includesArray(fnArgs, [arg]))}\nAvailable arguments: ${fnArgs.join(', ')}\n`
+import actions from '@/actions'
+import { actionsMessage, argsMessage, exit, includesArray, toCamelCase } from '@/utils'
 
 const [workflow, ...args] = process.argv.slice(2)
-if (!workflow) exit(`No workflow provided\n${actionsMessage}\n`)
+if (!workflow) exit(`No action provided.\n${actionsMessage(actions)}`)
 
 const action = toCamelCase(workflow) as keyof typeof actions
 const fn = actions[action]
-if (!fn) exit(`Action not found\n${actionsMessage}\n`)
+if (!fn) exit(`Action ${workflow} not found\n${actionsMessage(actions)}.`)
 
-if (args.length && fn?.args?.length && !includesArray(fn.args, args)) exit(argsMessage(args, fn.args))
-
-const exec = async (): Promise<void> => {
-  await fn(...args)
+if (args.length && fn?.args?.length && !includesArray(fn.args, args)) {
+  exit(argsMessage(args, fn.args))
 }
 
-exec()
+;(async (): Promise<void> => {
+  await fn(...args)
+})()

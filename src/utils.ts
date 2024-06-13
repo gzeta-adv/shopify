@@ -1,19 +1,21 @@
 /**
- * Get an environment variable or logs an error and exit the process if missing.
+ * Gets an environment variable or logs an error and exit the process if missing.
  */
-export const env = (key: string): string => {
+export const env = (key: string, fallback: any = key): string => {
   const value = process.env[key]
   if (value) return value
-
-  console.error(`Error: missing environment variable ${key}`)
+  if (fallback !== key) return fallback
+  logger.error(`Error: missing environment variable ${key}`)
   process.exit(1)
 }
 
 /**
  * Log an error message and exit the process.
  */
-export const exit = (message?: string, code: number = 1): void => {
-  if (message) logger.error(message)
+export const exit = (message?: any, code = 1): void => {
+  if (message) {
+    code === 1 ? logger.error(message) : logger.warning(message)
+  }
   process.exit(code)
 }
 
@@ -25,11 +27,14 @@ const isGithubActions = process.env.GITHUB_ACTIONS === 'true'
 /**
  * Logger with support for GitHub Actions annotations.
  */
+/* eslint-disable no-console */
 export const logger = {
   error: (...data: any[]): void => (isGithubActions ? console.error('::error::', ...data) : console.error(...data)),
   info: (...data: any[]): void => console.info(...data),
   notice: (...data: any[]): void => (isGithubActions ? console.info('::notice::', ...data) : console.info(...data)),
   warning: (...data: any[]): void => (isGithubActions ? console.warn('::warning::', ...data) : console.warn(...data)),
+  time: (label?: string): void => console.time(label),
+  timeEnd: (label?: string): void => console.timeEnd(label),
 }
 
 /**
@@ -139,7 +144,7 @@ export const transformKeys = <T extends Record<string, any>>(
  * Resolve nodes from a GraphQL response.
  */
 export const resolveNodes = <T extends Record<string, any>>(nodes: T[]): T[] =>
-  nodes?.map(node => {
+  nodes.map(node => {
     for (const key of Object.keys(node)) {
       const nodeValue = node[key as keyof typeof node]
 
@@ -151,6 +156,11 @@ export const resolveNodes = <T extends Record<string, any>>(nodes: T[]): T[] =>
     }
     return node
   })
+
+/**
+ * Resolve edges from a GraphQL response.
+ */
+export const resolveEdges = <T extends Record<string, any>>(edges: T[]): T[] => edges.map(edge => edge.node)
 
 /**
  * Split an array into chunks of a given size.
@@ -167,3 +177,25 @@ export const chunks = <T>(array: T[], size: number = 1): T[][] => {
  * Check if an array includes all the specified values.
  */
 export const includesArray = <T>(array: T[], values: T[]): boolean => values.every(value => array.includes(value))
+
+/**
+ * Print a message with available actions.
+ */
+export const actionsMessage = (actions: Record<string, any>) =>
+  `Available actions: ${Object.keys(actions).map(toKebabCase).sort().join(', ')}`
+
+/**
+ * Print a message with available arguments.
+ */
+export const argsMessage = (args: string[], fnArgs: string[]) =>
+  `Wrong arguments: ${args.filter(arg => !includesArray(fnArgs, [arg]))}\nAvailable arguments: ${fnArgs.join(', ')}\n`
+
+/**
+ * Sleep for a given number of milliseconds.
+ */
+export const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
+
+/**
+ * Turns the number to 0 if negative.
+ */
+export const toPositive = (n: number): number => (n < 0 ? 0 : n)

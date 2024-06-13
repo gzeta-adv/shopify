@@ -9,6 +9,5 @@ export const collections = {
   unpublishCollection,
 }
 
-export type { Collection } from './types'
 export type { FetchCollectionsRequestOptions, FetchCollectionsResponse } from './fetch'
 export type { PublishCollectionOptions, PublishCollectionResponse } from './publish'
