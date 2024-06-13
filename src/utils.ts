@@ -4,9 +4,7 @@
 export const env = (key: string, fallback: any = key): string => {
   const value = process.env[key]
   if (value) return value
-  if (fallback !== key) return fallback
-  logger.error(`Error: missing environment variable ${key}`)
-  process.exit(1)
+  return fallback
 }
 
 /**
