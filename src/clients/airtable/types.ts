@@ -1,9 +1,15 @@
-import { FieldSet as AirtableFieldSet, Record as AirtableRecord, Records as AirtableRecords } from 'airtable'
+import {
+  FieldSet as AirtableFieldSet,
+  Record as AirtableRecord,
+  Records as AirtableRecords,
+  Query as AirtableQuery,
+} from 'airtable'
 import { ActionStatus } from '@/types'
 
 export interface FieldSet extends AirtableFieldSet {}
 export interface Record<T extends FieldSet = FieldSet> extends AirtableRecord<T> {}
 export interface Records<T extends FieldSet = FieldSet> extends AirtableRecords<T> {}
+export interface Query<T extends FieldSet = FieldSet> extends AirtableQuery<T> {}
 
 export interface ActionRunRecord extends FieldSet {
   Date: string

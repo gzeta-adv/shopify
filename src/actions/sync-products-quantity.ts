@@ -1,11 +1,10 @@
-import airtable, { FieldSet, actionLogger } from '@/clients/airtable'
+import airtable, { FieldSet, PRODUCT_QUANTITY_TABLE_ID, actionLogger } from '@/clients/airtable'
 import shopify, { InventoryItem, LOCATION_ID, Product, ProductVariant, adminDomain } from '@/clients/shopify'
 import { AdjustQuantitiesInput } from '@/clients/shopify/inventory'
 import wikini from '@/clients/wikini'
 import { Action, ActionStatus } from '@/types'
-import { env, logger, pluralize, toID, toPositive } from '@/utils'
+import { logger, pluralize, toID, toPositive } from '@/utils'
 
-const TABLE_ID = env('AIRTABLE_PRODUCT_QUANTITY_TABLE_ID')
 const ACTION = 'Sync Products Quantity'
 
 const BASE_INPUT = {
@@ -126,7 +125,10 @@ export const syncProductsQuantity: Action = async () => {
 
   logger.notice(`\nAdjusted quantity of ${changes.length} product ${pluralize('variant', changes.length)}.`)
 
-  const records = await airtable.createRecords<SyncProductsActionLog>({ tableId: TABLE_ID, records: logs })
+  const records = await airtable.createRecords<SyncProductsActionLog>({
+    tableId: PRODUCT_QUANTITY_TABLE_ID,
+    records: logs,
+  })
 
   await actionLogger.fromRecords({ action: ACTION, records })
 }

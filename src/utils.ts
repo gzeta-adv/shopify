@@ -198,3 +198,9 @@ export const sleep = (ms: number): Promise<void> => new Promise(resolve => setTi
  * Turns the number to 0 if negative.
  */
 export const toPositive = (n: number): number => (n < 0 ? 0 : n)
+
+/**
+ * Builds a URLSearchParams object from an object.
+ */
+export const buildURLSearchParams = <T extends Record<any, any>>(params: T): URLSearchParams =>
+  new URLSearchParams(params)

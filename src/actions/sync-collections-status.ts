@@ -1,15 +1,14 @@
-import airtable, { FieldSet, actionLogger } from '@/clients/airtable'
+import airtable, { COLLECTION_STATUS_TABLE_ID, FieldSet, actionLogger } from '@/clients/airtable'
 import shopify, {
   COLLECTION_METAFIELD,
-  Collection,
   RESOURCES_LIMIT,
+  Collection,
   adminDomain,
   parseUserErrors,
 } from '@/clients/shopify'
 import { Action, ActionStatus } from '@/types'
-import { env, logger, toID, titleize } from '@/utils'
+import { logger, toID, titleize } from '@/utils'
 
-const TABLE_ID = env('AIRTABLE_COLLECTION_STATUS_TABLE_ID')
 const ACTION = 'Sync Collections Status'
 
 interface PublishCollection extends Collection {
@@ -154,7 +153,7 @@ const updateCollections = async (
 
     logger.notice(`${actionTitle}ed ${updatedCollections.length} out of ${collections.length} collections.`)
 
-    const records = await airtable.createRecords<PublishLog>({ tableId: TABLE_ID, records: logs })
+    const records = await airtable.createRecords<PublishLog>({ tableId: COLLECTION_STATUS_TABLE_ID, records: logs })
     await actionLogger.fromRecords({ action: ACTION, records })
   }
 
@@ -166,7 +165,7 @@ const updateCollections = async (
 /**
  * Synchronize the publications of all collections in the Shopify store depending on a boolean metafield.
  */
-export const syncCollectionsStatus: Action = async (): Promise<void> => {
+export const syncCollectionsStatus: Action = async () => {
   const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
   const collections = data?.collections?.nodes || []
   if (!collections.length) {

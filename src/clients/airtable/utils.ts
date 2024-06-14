@@ -1,11 +1,9 @@
-import { BASE_URL } from './data'
+import { BASE_URL, RUNS_TABLE_ID } from './data'
 import { createRecords } from './records'
 import { ActionRunPayload, ActionRunRecord, FieldSet, Records } from './types'
 
 import { ActionError, ActionStatus } from '@/types'
-import { env, exit as exitProcess, logger } from '@/utils'
-
-const RUNS_TABLE_ID = env('AIRTABLE_RUNS_TABLE_ID')
+import { exit as exitProcess, logger } from '@/utils'
 
 /**
  * Logs a action run using a given payload.
@@ -31,6 +29,11 @@ export const logActionRun = async <T extends ActionRunPayload>(
  */
 export const logActionRunSkip = async ({ action, message }: ActionError, exit = false) => {
   await logActionRun(action, { status: ActionStatus.skipped, message })
+  exit ? exitProcess(message, 0) : logger.notice(message)
+}
+
+export const logActionRunSuccess = async ({ action, message }: ActionError, exit = false) => {
+  await logActionRun(action, { status: ActionStatus.success, message })
   exit ? exitProcess(message, 0) : logger.notice(message)
 }
 
@@ -62,9 +65,13 @@ export const logActionRunFromRecords = async <T extends FieldSet>({
   return await createRecords<ActionRunRecord>({ tableId: RUNS_TABLE_ID, records: [run] })
 }
 
+/**
+ * Action logger utilities.
+ */
 export const actionLogger = {
   run: logActionRun,
   skip: logActionRunSkip,
   error: logActionRunError,
+  success: logActionRunSuccess,
   fromRecords: logActionRunFromRecords,
 }

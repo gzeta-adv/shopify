@@ -1,3 +1,8 @@
+[airtable-base]: https://airtable.com/appn0QEUHeYBOQnjc/shrvwYpD6I6E6tHVi
+[airtable-sync-collections-status]: https://airtable.com/appn0QEUHeYBOQnjc/shrsmP0ibE9q2sSWz
+[airtable-sync-products-quantity]: https://airtable.com/appn0QEUHeYBOQnjc/shrd5ehZScQGq9qot
+[airtable-runs]: https://airtable.com/appn0QEUHeYBOQnjc/shr0xQg4Jr4C4sMdR
+
 # Wikini
 
 This repository contains the source code of the actions, extensions and APIs used by the Wikini Shopify store.
@@ -20,8 +25,7 @@ To run an action, use the command:
 pnpm run action <workflow-name>
 ```
 
-Each action is run with a GitHub Actions workflow defined in the `.github/workflows` directory and has specific triggers and environment variables.
-
+Each action is run with a GitHub Actions workflow defined in the `.github/workflows` directory and needs specific environment variables. All actions can be triggered manually via the `Run workflow` button in the repository Actions tab. 
 
 
 ### Sync Collections Status
@@ -32,7 +36,7 @@ The action synchronizes the publications of a Shopify collection depending on a 
 
 | Workflow | Environment | Schedule | Logs |
 | -------- | ----------- | -------- | ---- |
-| [`sync-collections-status`](.github/workflows/sync-collections-status.yml) | `AIRTABLE_API_KEY`<br>`AIRTABLE_BASE_ID`<br>`AIRTABLE_COLLECTION_STATUS_TABLE_ID`<br>`AIRTABLE_RUNS_TABLE_ID`<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_STORE_ID` | - Every 3 hours<br>- Manually via action dispatch | [Airtable](https://airtable.com/appn0QEUHeYBOQnjc/tbliM6NaaicZx53j9) |
+| [`sync-collections-status`](.github/workflows/sync-collections-status.yml) | `AIRTABLE_API_KEY`<br>`AIRTABLE_BASE_ID`<br>`AIRTABLE_COLLECTION_STATUS_TABLE_ID`<br>`AIRTABLE_RUNS_TABLE_ID`<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_STORE_ID` | Every 3 hours | [Collection Status Operations][airtable-sync-collections-status] |
 
 ### Sync Products Quantity
 
@@ -42,7 +46,17 @@ The action synchronizes the quantity of the products in the Wikini CMS with the 
 
 | Workflow | Environment | Schedule | Logs |
 | -------- | ----------- | -------- | ---- |
-| [`sync-products-quantity`](.github/workflows/sync-products-quantity.yml) | `AIRTABLE_API_KEY`<br>`AIRTABLE_BASE_ID`<br>`AIRTABLE_PRODUCT_QUANTITY_TABLE_ID`<br>`AIRTABLE_RUNS_TABLE_ID`<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_LOCATION_ID`<br>`SHOPIFY_STORE_ID`<br>`WIKINI_API_URL`<br>`WIKINI_API_KEY`<br>`WIKINI_VERIFY_ENDPOINT` | - Every minute[*](#run-a-workflow-in-shorter-intervals)<br>- Manually via action dispatch | [Airtable](https://airtable.com/appn0QEUHeYBOQnjc/tblopaEqeBGc6rfay) |
+| [`sync-products-quantity`](.github/workflows/sync-products-quantity.yml) | `AIRTABLE_API_KEY`<br>`AIRTABLE_BASE_ID`<br>`AIRTABLE_PRODUCT_QUANTITY_TABLE_ID`<br>`AIRTABLE_RUNS_TABLE_ID`<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_LOCATION_ID`<br>`SHOPIFY_STORE_ID`<br>`WIKINI_API_URL`<br>`WIKINI_API_KEY`<br>`WIKINI_VERIFY_ENDPOINT` | Every minute[*](#run-a-workflow-in-shorter-intervals) | [Product Quantity Operations][airtable-sync-products-quantity] |
+
+### Clean Airtable
+
+[![](https://github.com/gzeta-adv/wikini/actions/workflows/clean-airtable.yml/badge.svg)](https://github.com/gzeta-adv/wikini/actions/workflows/clean-airtable.yml)
+
+The action cleans the Airtable tables that store the logs of the actions (see [Logs](#logs)). Records older than 10 days are deleted.
+
+| Workflow | Environment | Schedule | Logs |
+| -------- | ----------- | -------- | ---- |
+| [`clean-airtable`](.github/workflows/clean-airtable.yml) | `AIRTABLE_API_KEY`<br>`AIRTABLE_BASE_ID`<br>`AIRTABLE_RUNS_TABLE_ID` | Every day | [Runs][airtable-runs] |
 
 ## Notes
 
@@ -57,4 +71,8 @@ curl --request POST \
   --data '{ "event_type": "Sync products quantity" }'
 ```
 
-The service used to send the request every minute is [Google Cloud Scheduler](https://cloud.google.com/scheduler).
+The service currently used to send the request every minute is [Google Cloud Scheduler](https://cloud.google.com/scheduler).
+
+### Logs
+
+The logs of all actions are stored in an [Airtable base][airtable-base] that has a limit of 50.000 entries per month. For this reason, the [Runs][airtable-runs] table is **limited to the last 10 days**.

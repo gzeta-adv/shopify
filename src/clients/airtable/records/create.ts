@@ -1,5 +1,5 @@
 import { client } from '@/clients/airtable'
-import { chunks } from '@/utils'
+import { chunks, logger } from '@/utils'
 
 import type { FieldSet, Records } from '@/clients/airtable'
 
@@ -21,7 +21,7 @@ export const createRecords = async <T extends FieldSet>({
     const results = await Promise.all(recordChunks.map(chunk => client<T>(tableId).create(chunk, { typecast: true })))
     return results.flat()
   } catch (e) {
-    console.error(e)
+    logger.error(e)
     return []
   }
 }
