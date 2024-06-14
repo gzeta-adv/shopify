@@ -1,10 +1,9 @@
 name: Sync products quantity
 
 on:
-  repository_dispatch:
   workflow_dispatch:
-  schedule:
-    - cron: '* * * * *'
+  repository_dispatch:
+    types: ['Sync products quantity']
 
 jobs:
   sync-products-quantity:

@@ -2,6 +2,8 @@ name: Sync collections status
 
 on:
   workflow_dispatch:
+  repository_dispatch:
+    types: ['Sync collections status']
   schedule:
     - cron: '0 */3 * * *'
 
