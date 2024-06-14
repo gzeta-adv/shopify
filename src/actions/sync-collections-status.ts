@@ -1,12 +1,16 @@
-import airtable from '@/clients/airtable'
-import shopify, { COLLECTION_METAFIELD, RESOURCES_LIMIT, adminDomain, parseUserErrors } from '@/clients/shopify'
-import { env, exit, logger, toID, toTitleCase } from '@/utils'
-
-import type { FieldSet } from '@/clients/airtable'
-import type { Collection } from '@/clients/shopify'
-import type { Action } from '@/types'
+import airtable, { FieldSet, actionLogger } from '@/clients/airtable'
+import shopify, {
+  COLLECTION_METAFIELD,
+  Collection,
+  RESOURCES_LIMIT,
+  adminDomain,
+  parseUserErrors,
+} from '@/clients/shopify'
+import { Action, ActionStatus } from '@/types'
+import { env, logger, toID, titleize } from '@/utils'
 
 const TABLE_ID = env('AIRTABLE_COLLECTION_STATUS_TABLE_ID')
+const ACTION = 'Sync Collections Status'
 
 interface PublishCollection extends Collection {
   metafields: {
@@ -29,14 +33,9 @@ enum PublishAction {
   unpublish = 'unpublish',
 }
 
-enum PublishStatus {
-  success = 'Success',
-  failed = 'Failed',
-}
-
 interface PublishLog extends FieldSet {
   Date: string
-  Status: PublishStatus
+  Status: ActionStatus
   Action: 'Publish' | 'Unpublish'
   'Collection ID': number
   'Collection Title': string
@@ -49,7 +48,7 @@ interface PublishLog extends FieldSet {
 }
 
 interface PublishLogOptions {
-  status: PublishStatus
+  status: ActionStatus
   action: PublishAction
   collection: PublishCollection
   publications: string[]
@@ -81,6 +80,7 @@ const fields = `
 `
 
 const countPublications = ({ resourcePublicationsV2 }: PublishCollection) => resourcePublicationsV2.length
+
 const isObsolete = ({ metafields }: PublishCollection) => {
   const { value } = metafields.find(({ key }) => key === COLLECTION_METAFIELD) || {}
   return value === 'true'
@@ -88,8 +88,8 @@ const isObsolete = ({ metafields }: PublishCollection) => {
 
 const createLog = ({ status, action, collection, message, publications, obsolete }: PublishLogOptions): PublishLog => ({
   Date: new Date().toISOString(),
-  Status: toTitleCase(status) as PublishLog['Status'],
-  Action: toTitleCase(action) as PublishLog['Action'],
+  Status: titleize(status) as PublishLog['Status'],
+  Action: titleize(action) as PublishLog['Action'],
   'Collection ID': toID(collection.id),
   'Collection Title': collection.title || '',
   'Collection URL': `https://${adminDomain}/collections/${toID(collection.id)}`,
@@ -106,19 +106,21 @@ const updateCollections = async (
 ): Promise<void> => {
   const actions = Object.keys(args) as PublishAction[]
   const logs: PublishLog[] = []
+  const skipped: PublishAction[] = []
 
   for (const action of actions) {
     const collections = args[action]
+    const actionTitle = titleize(action)
 
     if (!collections.length) {
-      logger.notice(`No collections to ${action}.`)
+      skipped.push(action)
       continue
     }
 
     const fn = action === PublishAction.publish ? shopify.publishCollection : shopify.unpublishCollection
     const updatedCollections = []
 
-    logger.info(`${toTitleCase(action)}ing ${collections.length} collections...`)
+    logger.info(`${actionTitle}ing ${collections.length} collections...`)
 
     for (const collection of collections) {
       const { id, title } = collection
@@ -130,11 +132,12 @@ const updateCollections = async (
       if (!updated) {
         logger.error(`⚠︎ Failed: ${toID(id)} (${title})`)
         const errors = parseUserErrors(userErrors)
-        if (errors) logger.error(errors)
+
+        if (errors) await actionLogger.error({ action: ACTION, errors, message: errors })
 
         const log = createLog({
           ...logBody,
-          status: PublishStatus.failed,
+          status: ActionStatus.failed,
           message: errors || 'Unknown error',
         })
         logs.push(log)
@@ -143,15 +146,20 @@ const updateCollections = async (
       }
 
       updatedCollections.push(updated)
-      logger.info(`✓ ${toTitleCase(action)}: ${toID(updated.id)} (${updated.title})`)
+      logger.info(`✓ ${actionTitle}: ${toID(updated.id)} (${updated.title})`)
 
-      const log = createLog({ ...logBody, status: PublishStatus.success })
+      const log = createLog({ ...logBody, status: ActionStatus.success })
       logs.push(log)
     }
 
-    logger.notice(`${toTitleCase(action)}ed ${updatedCollections.length} out of ${collections.length} collections.`)
+    logger.notice(`${actionTitle}ed ${updatedCollections.length} out of ${collections.length} collections.`)
 
-    await airtable.createRecords<PublishLog>({ tableId: TABLE_ID, records: logs })
+    const records = await airtable.createRecords<PublishLog>({ tableId: TABLE_ID, records: logs })
+    await actionLogger.fromRecords({ action: ACTION, records })
+  }
+
+  if (skipped.length === actions.length) {
+    await actionLogger.skip({ action: ACTION, message: `No collections to ${skipped.join(' or ')}.` })
   }
 }
 
@@ -161,7 +169,9 @@ const updateCollections = async (
 export const syncCollectionsStatus: Action = async (): Promise<void> => {
   const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
   const collections = data?.collections?.nodes || []
-  if (!collections.length) exit('No collections found.')
+  if (!collections.length) {
+    return await actionLogger.error({ action: ACTION, message: 'No collections found.' })
+  }
 
   const publications = [
     ...new Set(
@@ -170,7 +180,9 @@ export const syncCollectionsStatus: Action = async (): Promise<void> => {
       )
     ),
   ]
-  if (!publications.length) exit('No publications found.')
+  if (!publications.length) {
+    return await actionLogger.error({ action: ACTION, message: 'No publications found.' })
+  }
 
   const publish = collections.filter(
     collection => !isObsolete(collection) && countPublications(collection) < publications.length

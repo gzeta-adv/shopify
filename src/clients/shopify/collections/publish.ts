@@ -1,11 +1,11 @@
 import { client } from '@/clients/shopify'
-import { toTitleCase } from '@/utils'
+import { titleize } from '@/utils'
 
 import type { Collection } from '@/clients/shopify'
 
 const getPublishOperation = (action: 'publish' | 'unpublish' = 'publish', fields?: string) => {
   const nodes = ['id', 'title', fields].filter(String).join('\n')
-  const actionName = toTitleCase(action)
+  const actionName = titleize(action)
 
   return `
     mutation collection${actionName}($input: Collection${actionName}Input!) {

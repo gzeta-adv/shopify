@@ -1,3 +1,5 @@
+export { default as pluralize } from 'pluralize'
+
 /**
  * Gets an environment variable or logs an error and exit the process if missing.
  */
@@ -8,17 +10,17 @@ export const env = (key: string, fallback: any = key): string => {
 }
 
 /**
- * Log an error message and exit the process.
+ * Logs an error message and exit the process.
  */
 export const exit = (message?: any, code = 1): void => {
   if (message) {
-    code === 1 ? logger.error(message) : logger.warning(message)
+    code === 1 ? logger.error(message) : logger.notice(message)
   }
   process.exit(code)
 }
 
 /**
- * Check if the current environment is GitHub Actions.
+ * Checks if the current environment is GitHub Actions.
  */
 const isGithubActions = process.env.GITHUB_ACTIONS === 'true'
 
@@ -36,49 +38,53 @@ export const logger = {
 }
 
 /**
- * Pluck a key from an array of objects.
+ * Plucks a key from an array of objects.
  */
 export const pluck = <A extends Record<string, any>, K extends string>(array: A[], key: K): A[K][] =>
   array.map(el => el[key])
 
 /**
- * Generate an array of numbers in a given range.
+ * Generates an array of numbers in a given range.
  */
 export const range = (start: number, stop: number, step = 1): number[] =>
   Array.from({ length: (stop - start) / step + 1 }, (_, i) => start + i * step)
 
 /**
- * Convert an array of items into a human-readable sentence.
+ * Converts an array of items into a human-readable sentence.
  */
 export const sentencize = (array: any[]): string => new Intl.ListFormat().format(array)
 
 /**
- * Perform an action n times and return the results.
+ * Performs an action `n` times and return the results.
  */
 export const times = async <T>(n: number, callback: (i: number) => T): Promise<T[]> =>
   Promise.all(range(1, n).map(i => callback(i)))
 
 /**
- * Convert a Shopify ID to a number ID.
+ * Converts a Shopify ID to a number ID.
  */
 export const toID = (shopifyID: string): number => parseInt(shopifyID.split('/').pop() as string, 10)
 
 /**
- * Convert a string to title case.
+ * Convertss a string to title case.
  */
-export const titleize = (s: string): string =>
-  s
-    .replace(/_-:/g, ' ')
+export const titleize = (string: string, capitalize = true): string => {
+  const title = string
+    .replace(/_|-|:/g, ' ')
     .replace(/[A-Z]/g, m => ` ${m}`)
-    .replace(/\b\w/g, c => c.toUpperCase())
+    .trim()
+
+  if (!capitalize) return title
+  return title.replace(/\b\w/g, c => c.toUpperCase())
+}
 
 /**
- * Convert a string to camelCase.
+ * Converts a string to camelCase.
  */
 export const toCamelCase = (s: string): string => s.toLowerCase().replace(/([-_:]+\w)/g, m => m.slice(-1).toUpperCase())
 
 /**
- * Convert a string to kebab-case.
+ * Converts a string to kebab-case.
  */
 export const toKebabCase = (s: string): string =>
   s
@@ -87,7 +93,7 @@ export const toKebabCase = (s: string): string =>
     .replace(/_/g, () => '-')
 
 /**
- * Convert a string to colon:case.
+ * Converts a string to colon:case.
  */
 export const toColonCase = (s: string): string =>
   s
@@ -96,7 +102,7 @@ export const toColonCase = (s: string): string =>
     .replace(/[_-]/g, () => ':')
 
 /**
- * Convert a string to snake_case.
+ * Converts a string to snake_case.
  */
 export const toSnakeCase = (s: string): string =>
   s
@@ -105,17 +111,12 @@ export const toSnakeCase = (s: string): string =>
     .replace(/-/g, () => '_')
 
 /**
- * Convert a string to title case.
+ * Capitalizes the first letter of a string.
  */
-export const toTitleCase = <T extends string>(s: T): string =>
-  s
-    .replace(/_-:/g, ' ')
-    .replace(/.[A-Z]/g, m => ` ${m}`)
-    .replace(/\b\w/g, c => c.toUpperCase())
-    .trim()
+export const capitalize = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
 
 /**
- * Transform the keys of an array of objects to a given case.
+ * Transforms the keys of an array of objects to a given case.
  */
 export const transformKeys = <T extends Record<string, any>>(
   array: T[],
@@ -139,7 +140,7 @@ export const transformKeys = <T extends Record<string, any>>(
   )
 
 /**
- * Resolve nodes from a GraphQL response.
+ * Resolves nodes from a GraphQL response.
  */
 export const resolveNodes = <T extends Record<string, any>>(nodes: T[]): T[] =>
   nodes.map(node => {
@@ -156,12 +157,12 @@ export const resolveNodes = <T extends Record<string, any>>(nodes: T[]): T[] =>
   })
 
 /**
- * Resolve edges from a GraphQL response.
+ * Resolves edges from a GraphQL response.
  */
 export const resolveEdges = <T extends Record<string, any>>(edges: T[]): T[] => edges.map(edge => edge.node)
 
 /**
- * Split an array into chunks of a given size.
+ * Splits an array into chunks of a given size.
  */
 export const chunks = <T>(array: T[], size: number = 1): T[][] => {
   const results = []
@@ -172,24 +173,24 @@ export const chunks = <T>(array: T[], size: number = 1): T[][] => {
 }
 
 /**
- * Check if an array includes all the specified values.
+ * Checks if an array includes all the specified values.
  */
 export const includesArray = <T>(array: T[], values: T[]): boolean => values.every(value => array.includes(value))
 
 /**
- * Print a message with available actions.
+ * Prints a message with the available actions.
  */
 export const actionsMessage = (actions: Record<string, any>) =>
   `Available actions: ${Object.keys(actions).map(toKebabCase).sort().join(', ')}`
 
 /**
- * Print a message with available arguments.
+ * Prints a message with the available action arguments.
  */
 export const argsMessage = (args: string[], fnArgs: string[]) =>
   `Wrong arguments: ${args.filter(arg => !includesArray(fnArgs, [arg]))}\nAvailable arguments: ${fnArgs.join(', ')}\n`
 
 /**
- * Sleep for a given number of milliseconds.
+ * Sleeps for a given number of milliseconds.
  */
 export const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 

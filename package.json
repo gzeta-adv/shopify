@@ -26,13 +26,15 @@
   "dependencies": {
     "@shopify/admin-api-client": "^0.2.9",
     "airtable": "^0.12.2",
-    "dotenv": "^16.4.5"
+    "dotenv": "^16.4.5",
+    "pluralize": "^8.0.0"
   },
   "devDependencies": {
     "@release-it/bumper": "^6.0.1",
     "@release-it/conventional-changelog": "^8.0.1",
     "@shopify/cli": "^3.60.1",
     "@types/node": "^20.12.12",
+    "@types/pluralize": "^0.0.33",
     "@typescript-eslint/eslint-plugin": "^7.10.0",
     "@typescript-eslint/parser": "^7.10.0",
     "dotenv-cli": "^7.4.2",

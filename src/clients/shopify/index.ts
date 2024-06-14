@@ -11,4 +11,4 @@ export default { ...client, ...collections, ...inventory, ...locations, ...order
 
 export * from './data'
 export * from './utils'
-export type * from './types'
+export * from './types'

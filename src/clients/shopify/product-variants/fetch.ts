@@ -3,7 +3,7 @@ import { logger, resolveEdges } from '@/utils'
 
 import type { ClientResponse, ProductVariant } from '@/clients/shopify'
 
-const PRODUCT_VARIANT_FIELDS = 'id, sku, inventoryQuantity, inventoryItem { id }, product { id, title }'
+const PRODUCT_VARIANT_FIELDS = 'id, sku, displayName, inventoryQuantity, inventoryItem { id }, product { id, title }'
 
 /**
  * Request options for fetching products and variants using the Shopify Admin API.

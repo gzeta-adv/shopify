@@ -21,7 +21,7 @@ export interface Location extends BaseObject {
 }
 
 export interface Product extends BaseObject {
-  title?: string
+  title: string
 }
 
 export interface ProductVariant extends BaseObject {
