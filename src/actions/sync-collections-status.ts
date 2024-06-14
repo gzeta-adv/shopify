@@ -159,7 +159,7 @@ const updateCollections = async (
   }
 
   if (skipped.length === actions.length) {
-    await actionLogger.skip({ action: ACTION, message: `No collections to ${skipped.join(' or ')}.` })
+    await actionLogger.skip({ action: ACTION, message: `No changes to synchronize.` })
   }
 }
 
