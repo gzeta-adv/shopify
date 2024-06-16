@@ -1,4 +1,8 @@
+import parseArgs from 'yargs-parser'
+import { ActionArgs, ActionEvent, ActionOptions } from '@/types'
+
 export { default as pluralize } from 'pluralize'
+export { parseArgs }
 
 /**
  * Gets an environment variable or logs an error and exit the process if missing.
@@ -8,6 +12,16 @@ export const env = (key: string, fallback: any = key): string => {
   if (value) return value
   return fallback
 }
+
+/**
+ * Checks if the current environment is development.
+ */
+export const isDevelopment = env('NODE_ENV') === 'development'
+
+/**
+ * Checks if the current environment is test.
+ */
+export const isTest = env('NODE_ENV') === 'test'
 
 /**
  * Logs an error message and exit the process.
@@ -74,8 +88,8 @@ export const titleize = (string: string, capitalize = true): string => {
     .replace(/[A-Z]/g, m => ` ${m}`)
     .trim()
 
-  if (!capitalize) return title
-  return title.replace(/\b\w/g, c => c.toUpperCase())
+  if (capitalize) return title.replace(/\b\w/g, c => c.toUpperCase())
+  return `${title.charAt(0).toUpperCase()}${title.slice(1)}`
 }
 
 /**
@@ -186,8 +200,32 @@ export const actionsMessage = (actions: Record<string, any>) =>
 /**
  * Prints a message with the available action arguments.
  */
-export const argsMessage = (args: string[], fnArgs: string[]) =>
-  `Wrong arguments: ${args.filter(arg => !includesArray(fnArgs, [arg]))}\nAvailable arguments: ${fnArgs.join(', ')}\n`
+export const argsMessage = (opt: any) =>
+  `Unknown arguments${String(opt) ? `: ${opt}` : ''}\nAvailable options:\n  --event\t${Object.keys(ActionEvent).join(', ')}`
+
+/**
+ * Parses the action arguments.
+ */
+export const parseActionArgs = (args: string[]): ActionOptions => {
+  const opts = parseArgs(args)
+
+  return Object.keys(opts).reduce((acc, key) => {
+    const value = opts[key]
+
+    if (!Object.hasOwn(ActionArgs, key)) {
+      if (key === '_') {
+        if (value.length) exit(argsMessage(value.join(' ')))
+        return acc
+      }
+      exit(argsMessage(key))
+    }
+    if (key === ActionArgs.event && !Object.hasOwn(ActionEvent, value)) {
+      exit(argsMessage(value))
+    }
+
+    return { ...acc, [key]: value }
+  }, {} as ActionOptions)
+}
 
 /**
  * Sleeps for a given number of milliseconds.
@@ -204,3 +242,8 @@ export const toPositive = (n: number): number => (n < 0 ? 0 : n)
  */
 export const buildURLSearchParams = <T extends Record<any, any>>(params: T): URLSearchParams =>
   new URLSearchParams(params)
+
+/**
+ * Checks if the current environment is CI.
+ */
+export const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'

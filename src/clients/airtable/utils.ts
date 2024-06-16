@@ -3,7 +3,9 @@ import { createRecords } from './records'
 import { ActionRunPayload, ActionRunRecord, FieldSet, Records } from './types'
 
 import { ActionError, ActionStatus } from '@/types'
-import { exit as exitProcess, logger } from '@/utils'
+import { exit as exitProcess, isCI, logger, titleize } from '@/utils'
+
+const source = isCI ? 'GitHub Actions' : 'Local'
 
 /**
  * Logs a action run using a given payload.
@@ -16,6 +18,9 @@ export const logActionRun = async <T extends ActionRunPayload>(
     Date: new Date().toISOString(),
     Status: payload.status,
     Action: action,
+    Operations: payload.operations || '',
+    Source: source,
+    Event: titleize(payload.event || '', false) || undefined,
     Errors: payload.errors || '',
     Message: payload.message || '',
     Notes: payload.notes || '',
@@ -27,22 +32,25 @@ export const logActionRun = async <T extends ActionRunPayload>(
 /**
  * Logs a failed action run and exits the process.
  */
-export const logActionRunSkip = async ({ action, message }: ActionError, exit = false) => {
-  await logActionRun(action, { status: ActionStatus.skipped, message })
+export const logActionRunSkip = async ({ action, message, ...rest }: ActionError, exit = false) => {
+  await logActionRun(action, { status: ActionStatus.skipped, message, ...rest })
   exit ? exitProcess(message, 0) : logger.notice(message)
 }
 
-export const logActionRunSuccess = async ({ action, message }: ActionError, exit = false) => {
-  await logActionRun(action, { status: ActionStatus.success, message })
+/**
+ * Logs a successful action run and exits the process.
+ */
+export const logActionRunSuccess = async ({ action, message, ...rest }: ActionError, exit = false) => {
+  await logActionRun(action, { status: ActionStatus.success, message, ...rest })
   exit ? exitProcess(message, 0) : logger.notice(message)
 }
 
 /**
  * Logs a failed action run and exits the process.
  */
-export const logActionRunError = async ({ action, errors, message }: ActionError, exit = true) => {
+export const logActionRunError = async ({ action, errors, message, ...rest }: ActionError, exit = true) => {
   const errorLog = JSON.stringify(errors, null, 2)
-  await logActionRun(action, { status: ActionStatus.failed, errors: errorLog, message })
+  await logActionRun(action, { status: ActionStatus.failed, errors: errorLog, message, ...rest })
   exit ? exitProcess(message) : logger.error(message)
 }
 
@@ -52,17 +60,26 @@ export const logActionRunError = async ({ action, errors, message }: ActionError
 export const logActionRunFromRecords = async <T extends FieldSet>({
   action,
   records,
-}: ActionError<Records<T>>): Promise<Records<ActionRunRecord>> => {
-  const operations = records?.map(record => `${BASE_URL}/${RUNS_TABLE_ID}/${record.id}`).join('\n')
+  event,
+  message,
+}: ActionError<Records<T>>): Promise<void> => {
+  const operations = records
+    ?.map((record, i) => `${i + 1}. [${record.id}](${BASE_URL}/${record._table.id}/${record.id})`)
+    .join('\n')
 
   const run: ActionRunRecord = {
     Date: new Date().toISOString(),
     Status: ActionStatus.success,
     Action: action,
     Operations: operations,
+    Source: source,
+    Event: titleize(event || '', false) || undefined,
+    Message: message,
   }
 
-  return await createRecords<ActionRunRecord>({ tableId: RUNS_TABLE_ID, records: [run] })
+  await createRecords<ActionRunRecord>({ tableId: RUNS_TABLE_ID, records: [run] })
+
+  if (message) logger.notice(message)
 }
 
 /**

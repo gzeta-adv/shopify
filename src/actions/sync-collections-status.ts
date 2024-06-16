@@ -6,7 +6,7 @@ import shopify, {
   adminDomain,
   parseUserErrors,
 } from '@/clients/shopify'
-import { Action, ActionStatus } from '@/types'
+import { Action, ActionEvent, ActionStatus } from '@/types'
 import { logger, toID, titleize } from '@/utils'
 
 const ACTION = 'Sync Collections Status'
@@ -101,7 +101,8 @@ const createLog = ({ status, action, collection, message, publications, obsolete
 
 const updateCollections = async (
   args: Record<PublishAction, PublishCollection[]>,
-  publications: string[]
+  publications: string[],
+  event?: ActionEvent
 ): Promise<void> => {
   const actions = Object.keys(args) as PublishAction[]
   const logs: PublishLog[] = []
@@ -132,7 +133,7 @@ const updateCollections = async (
         logger.error(`⚠︎ Failed: ${toID(id)} (${title})`)
         const errors = parseUserErrors(userErrors)
 
-        if (errors) await actionLogger.error({ action: ACTION, errors, message: errors })
+        if (errors) await actionLogger.error({ action: ACTION, errors, message: errors, event })
 
         const log = createLog({
           ...logBody,
@@ -151,25 +152,30 @@ const updateCollections = async (
       logs.push(log)
     }
 
-    logger.notice(`${actionTitle}ed ${updatedCollections.length} out of ${collections.length} collections.`)
+    logger.notice(`${actionTitle}ed ${updatedCollections.length} out of ${collections.length} collections`)
 
     const records = await airtable.createRecords<PublishLog>({ tableId: COLLECTION_STATUS_TABLE_ID, records: logs })
-    await actionLogger.fromRecords({ action: ACTION, records })
+    await actionLogger.fromRecords({
+      action: ACTION,
+      records,
+      message: `${actionTitle}ed ${updatedCollections.length} collections`,
+      event,
+    })
   }
 
   if (skipped.length === actions.length) {
-    await actionLogger.skip({ action: ACTION, message: `No changes to synchronize.` })
+    await actionLogger.skip({ action: ACTION, message: `No changes to synchronize`, event })
   }
 }
 
 /**
  * Synchronize the publications of all collections in the Shopify store depending on a boolean metafield.
  */
-export const syncCollectionsStatus: Action = async () => {
+export const syncCollectionsStatus: Action = async ({ event }) => {
   const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
   const collections = data?.collections?.nodes || []
   if (!collections.length) {
-    return await actionLogger.error({ action: ACTION, message: 'No collections found.' })
+    return await actionLogger.error({ action: ACTION, message: 'No collections found', event })
   }
 
   const publications = [
@@ -180,7 +186,7 @@ export const syncCollectionsStatus: Action = async () => {
     ),
   ]
   if (!publications.length) {
-    return await actionLogger.error({ action: ACTION, message: 'No publications found.' })
+    return await actionLogger.error({ action: ACTION, message: 'No publications found', event })
   }
 
   const publish = collections.filter(
@@ -188,5 +194,5 @@ export const syncCollectionsStatus: Action = async () => {
   )
   const unpublish = collections.filter(collection => isObsolete(collection) && countPublications(collection) > 0)
 
-  await updateCollections({ publish, unpublish }, publications)
+  await updateCollections({ publish, unpublish }, publications, event)
 }

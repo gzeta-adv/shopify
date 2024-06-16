@@ -68,7 +68,7 @@ export const updateProductVariants = async <T extends Product = Product, K exten
 
   const error = errors?.graphQLErrors ? errors.graphQLErrors[0].message : errors?.message
   if (error) throw new Error(error)
-  if (!data) throw new Error('No data returned from Shopify API')
+  if (!data) throw new Error('Shopify API error')
 
   return data
 }

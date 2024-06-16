@@ -19,6 +19,7 @@
     "deploy": "shopify app deploy",
     "generate": "shopify app generate",
     "action": "ts-node src/index.ts",
+    "action:test": "NODE_ENV=test ts-node src/index.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "release": "dotenv release-it"
@@ -27,7 +28,8 @@
     "@shopify/admin-api-client": "^0.2.9",
     "airtable": "^0.12.2",
     "dotenv": "^16.4.5",
-    "pluralize": "^8.0.0"
+    "pluralize": "^8.0.0",
+    "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
     "@release-it/bumper": "^6.0.1",
@@ -35,6 +37,7 @@
     "@shopify/cli": "^3.60.1",
     "@types/node": "^20.12.12",
     "@types/pluralize": "^0.0.33",
+    "@types/yargs-parser": "^21.0.3",
     "@typescript-eslint/eslint-plugin": "^7.10.0",
     "@typescript-eslint/parser": "^7.10.0",
     "dotenv-cli": "^7.4.2",

@@ -1,7 +1,7 @@
 [airtable-base]: https://airtable.com/appn0QEUHeYBOQnjc/shrvwYpD6I6E6tHVi
-[airtable-sync-collections-status]: https://airtable.com/appn0QEUHeYBOQnjc/shrsmP0ibE9q2sSWz
-[airtable-sync-products-quantity]: https://airtable.com/appn0QEUHeYBOQnjc/shrd5ehZScQGq9qot
-[airtable-runs]: https://airtable.com/appn0QEUHeYBOQnjc/shr0xQg4Jr4C4sMdR
+[airtable-sync-collections-status]: https://airtable.com/appn0QEUHeYBOQnjc/shrvwYpD6I6E6tHVi/tbliM6NaaicZx53j9/viwPnBcbkh04ArnL6
+[airtable-sync-products-quantity]: https://airtable.com/appn0QEUHeYBOQnjc/shrvwYpD6I6E6tHVi/tblopaEqeBGc6rfay/viwV0F3roAuh9NzCv
+[airtable-runs]: https://airtable.com/appn0QEUHeYBOQnjc/shrvwYpD6I6E6tHVi/tbltT0vuYmSENHEaS/viw5LVQulRmhMDEE4
 
 # Wikini
 

@@ -61,7 +61,7 @@ const buildSyncProductsActionLog = (change: VariantChange): SyncProductsActionLo
 /**
  * Synchronizes product quantities between the Wikini CMS and Shopify.
  */
-export const syncProductsQuantity: Action = async () => {
+export const syncProductsQuantity: Action = async ({ event }) => {
   const variantChanges: VariantChange[] = []
   const logs: SyncProductsActionLog[] = []
 
@@ -72,7 +72,7 @@ export const syncProductsQuantity: Action = async () => {
   const variants = data?.productVariants?.edges || []
 
   if (!variants.length) {
-    return await actionLogger.error({ action: ACTION, message: 'No product variants found.' })
+    return await actionLogger.error({ action: ACTION, message: 'No product variants found', event })
   }
 
   const items = variants.map(({ sku }) => ({ variantId: sku }))
@@ -101,14 +101,14 @@ export const syncProductsQuantity: Action = async () => {
   )
 
   if (!changes.length) {
-    return await actionLogger.skip({ action: ACTION, message: 'No changes to synchronize.' }, true)
+    return await actionLogger.skip({ action: ACTION, message: 'No changes', event }, true)
   }
 
   const input = { ...BASE_INPUT, changes }
   const { data: adjustData, errors } = await shopify.adjustQuantities({ input })
 
   if (!adjustData || errors) {
-    return await actionLogger.error({ action: ACTION, errors, message: 'No data returned from Shopify.' })
+    return await actionLogger.error({ action: ACTION, errors, message: 'Shopify API error', event })
   }
 
   const { changes: inventoryChanges, createdAt } = adjustData.inventoryAdjustQuantities.inventoryAdjustmentGroup
@@ -123,12 +123,15 @@ export const syncProductsQuantity: Action = async () => {
     logs.push(buildSyncProductsActionLog({ ...variantChange, delta: change.delta, date: createdAt }))
   }
 
-  logger.notice(`\nAdjusted quantity of ${changes.length} product ${pluralize('variant', changes.length)}.`)
-
   const records = await airtable.createRecords<SyncProductsActionLog>({
     tableId: PRODUCT_QUANTITY_TABLE_ID,
     records: logs,
   })
 
-  await actionLogger.fromRecords({ action: ACTION, records })
+  await actionLogger.fromRecords({
+    action: ACTION,
+    records,
+    message: `Adjusted quantity of ${logs.length} product ${pluralize('variant', changes.length)}`,
+    event,
+  })
 }

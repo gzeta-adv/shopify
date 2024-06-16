@@ -17,6 +17,9 @@ dependencies:
   pluralize:
     specifier: ^8.0.0
     version: 8.0.0
+  yargs-parser:
+    specifier: ^21.1.1
+    version: 21.1.1
 
 devDependencies:
   '@release-it/bumper':
@@ -34,6 +37,9 @@ devDependencies:
   '@types/pluralize':
     specifier: ^0.0.33
     version: 0.0.33
+  '@types/yargs-parser':
+    specifier: ^21.0.3
+    version: 21.0.3
   '@typescript-eslint/eslint-plugin':
     specifier: ^7.10.0
     version: 7.10.0(@typescript-eslint/parser@7.10.0)(eslint@8.57.0)(typescript@5.4.5)
@@ -661,6 +667,10 @@ packages:
 
   /@types/pluralize@0.0.33:
     resolution: {integrity: sha512-JOqsl+ZoCpP4e8TDke9W79FDcSgPAR0l6pixx2JHkhnRjvShyYiAYw2LVsnA7K08Y6DeOnaU6ujmENO4os/cYg==}
+    dev: true
+
+  /@types/yargs-parser@21.0.3:
+    resolution: {integrity: sha512-I4q9QU9MQv4oEOz4tAHJtNz1cwuLxn2F3xcc2iV5WdqLPpUnj30aUuxt1mAxYTG+oe8CZMV/+6rU4S4gRDzqtQ==}
     dev: true
 
   /@typescript-eslint/eslint-plugin@7.10.0(@typescript-eslint/parser@7.10.0)(eslint@8.57.0)(typescript@5.4.5):
@@ -4652,7 +4662,6 @@ packages:
   /yargs-parser@21.1.1:
     resolution: {integrity: sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw==}
     engines: {node: '>=12'}
-    dev: true
 
   /yn@3.1.1:
     resolution: {integrity: sha512-Ux4ygGWsu2c7isFWe8Yu1YluJmqVhxqK2cLXNQA5AcC3QfbGNpM7fu0Y8b/z16pXLnFxZYvWhd3fhBY9DLmC6Q==}

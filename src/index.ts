@@ -1,17 +1,20 @@
 import actions from '@/actions'
-import { actionsMessage, argsMessage, exit, includesArray, toCamelCase } from '@/utils'
+import { ActionEvent } from '@/types'
+import { actionsMessage, exit, isTest, parseActionArgs, toCamelCase } from '@/utils'
 
 const [workflow, ...args] = process.argv.slice(2)
-if (!workflow) exit(`No action provided.\n${actionsMessage(actions)}`)
+if (!workflow) exit(`Error: no action provided\n${actionsMessage(actions)}`)
 
 const action = toCamelCase(workflow) as keyof typeof actions
 const fn = actions[action]
-if (!fn) exit(`Action ${workflow} not found\n${actionsMessage(actions)}.`)
+if (!fn) exit(`Error: action ${workflow} not found\n${actionsMessage(actions)}`)
 
-if (args.length && fn?.args?.length && !includesArray(fn.args, args)) {
-  exit(argsMessage(args, fn.args))
+const opts = parseActionArgs(args)
+
+if (!opts.event) {
+  opts.event = isTest ? ActionEvent.test : ActionEvent.local_dispatch
 }
 
 ;(async (): Promise<void> => {
-  await fn(...args)
+  await fn(opts)
 })()
