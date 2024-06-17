@@ -3,7 +3,7 @@ import { createRecords } from './records'
 import { ActionRunPayload, ActionRunRecord, FieldSet, Record, Records } from './types'
 
 import { ActionLog, ActionStatus } from '@/types'
-import { isCI, logger, pluck, titleize } from '@/utils'
+import { getActionRunLink, isCI, logger, pluck, titleize } from '@/utils'
 
 const source = isCI ? 'GitHub Actions' : 'Local'
 
@@ -26,6 +26,8 @@ export const logActionRun = async <T extends ActionRunPayload>(
     Action: action,
     Source: source,
     Event: titleize(payload.event || '', false) || undefined,
+    'GitHub Run': payload.runId ? getActionRunLink(payload.runId) : undefined,
+    Retry: payload.retry || undefined,
     Errors: payload.errors || '',
     Message: payload.message || '',
     Notes: payload.notes || '',
@@ -70,6 +72,8 @@ export const logActionRunFromRecords = async <T extends FieldSet>({
   lookup,
   message,
   records,
+  retry,
+  runId,
 }: ActionLog<Records<T>>): Promise<void> => {
   const run: ActionRunRecord = {
     Date: new Date().toISOString(),
@@ -77,6 +81,8 @@ export const logActionRunFromRecords = async <T extends FieldSet>({
     Action: action,
     Source: source,
     Event: titleize(event || '', false) || undefined,
+    'GitHub Run': runId ? getActionRunLink(runId) : undefined,
+    Retry: retry || undefined,
     Message: message,
   }
 

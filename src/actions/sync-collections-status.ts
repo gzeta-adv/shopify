@@ -176,20 +176,23 @@ const updateCollections = async (
 /**
  * Synchronize the publications of all collections in the Shopify store depending on a boolean metafield.
  */
-export const syncCollectionsStatus: Action = async ({ event, retries }) => {
+export const syncCollectionsStatus: Action = async ({ event, retries, runId }) => {
   for (const i of Array(retries).keys()) {
     const isLastRetry = i === retries - 1
+    const retry = retries > 1 ? `${i + 1}/${retries}` : undefined
 
     const actionLog: ActionLog = {
       action: ACTION,
       event,
+      retry,
+      runId,
     }
 
     const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
     const collections = data?.collections?.nodes || []
     if (!collections.length) {
       await actionLogger.error({ ...actionLog, message: 'No collections found' })
-      if (isLastRetry) return
+      if (isLastRetry) break
       continue
     }
 
@@ -202,7 +205,7 @@ export const syncCollectionsStatus: Action = async ({ event, retries }) => {
     ]
     if (!publications.length) {
       await actionLogger.error({ ...actionLog, message: 'No publications found' })
-      if (isLastRetry) return
+      if (isLastRetry) break
       continue
     }
 
@@ -211,6 +214,6 @@ export const syncCollectionsStatus: Action = async ({ event, retries }) => {
     )
     const unpublish = collections.filter(collection => isObsolete(collection) && countPublications(collection) > 0)
 
-    if (await updateCollections({ publish, unpublish }, publications, actionLog)) return
+    if (await updateCollections({ publish, unpublish }, publications, actionLog)) break
   }
 }

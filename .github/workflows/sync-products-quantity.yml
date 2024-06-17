@@ -18,7 +18,7 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install
-      - run: pnpm run action sync-products-quantity --event ${{ github.event_name }} --retries 5
+      - run: pnpm run action sync-products-quantity --event ${{ github.event_name }} --retries 5 --runId ${{ github.run_id }}
         name: Run action sync-products-quantity
         env:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}

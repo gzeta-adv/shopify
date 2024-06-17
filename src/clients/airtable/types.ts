@@ -14,6 +14,8 @@ export interface ActionRunRecord extends FieldSet {
   'Collection Status Operations'?: string[]
   Source: string
   Event?: string
+  'GitHub Run'?: string
+  Retry?: string
   Errors?: string
   Message?: string
   Notes?: string
@@ -29,5 +31,7 @@ export interface ActionRunPayload {
   message?: string
   notes?: string
   operations?: string[]
+  retry?: string
+  runId?: string
   source?: string
 }

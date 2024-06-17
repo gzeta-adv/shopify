@@ -9,6 +9,7 @@ export type Action = (options: ActionOptions) => Promise<void>
 export enum ActionArgs {
   event = 'event',
   retries = 'retries',
+  runId = 'runId',
 }
 
 /**
@@ -17,6 +18,7 @@ export enum ActionArgs {
 export interface ActionOptions extends Record<keyof ActionArgs, any> {
   event: ActionEvent
   retries: number
+  runId: string
 }
 
 /**
@@ -50,6 +52,8 @@ export interface ActionLog<T = any> {
   message?: string
   notes?: string
   records?: T
+  retry?: string
+  runId?: string
 }
 
 /**

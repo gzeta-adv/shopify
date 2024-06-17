@@ -18,7 +18,7 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install
-      - run: pnpm run action clean-airtable --event ${{ github.event_name }}
+      - run: pnpm run action clean-airtable --event ${{ github.event_name }} --runId ${{ github.run_id }}
         name: Run action clean-airtable
         env:
           AIRTABLE_API_KEY: ${{ secrets.AIRTABLE_API_KEY }}

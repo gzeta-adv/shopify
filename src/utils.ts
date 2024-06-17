@@ -1,6 +1,6 @@
 import parseArgs from 'yargs-parser'
+import { MAX_ACTION_RETRIES, repositoryUrl } from '@/data'
 import { ActionArgs, ActionEvent, ActionOptions, Tuple } from '@/types'
-import { MAX_ACTION_RETRIES } from '@/data'
 
 export { default as pluralize } from 'pluralize'
 export { parseArgs }
@@ -201,8 +201,13 @@ export const actionsMessage = (actions: Record<string, any>) =>
 /**
  * Prints a message with the available action arguments.
  */
-export const argsMessage = (opt: any) =>
-  `Unknown arguments${String(opt) ? `: ${opt}` : ''}\nAvailable options:\n  --event\t${Object.keys(ActionEvent).join(', ')}`
+export const argsMessage = (opt: any) => `
+Unknown arguments${String(opt) ? `: ${opt}` : ''}
+Available options:
+  --event      ${Object.keys(ActionEvent).join(', ')}
+  --retries    0-${MAX_ACTION_RETRIES}
+  --runId      <string>
+`
 
 /**
  * Parses the action arguments.
@@ -261,3 +266,8 @@ export const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 
  * Creates an array with `n` copies of the given element.
  */
 export const repeat = <T, K extends number>(element: T, n: K): Tuple<T, K> => Array(n).fill(element) as Tuple<T, K>
+
+/**
+ * Returns a link to the given GitHub Actions run.
+ */
+export const getActionRunLink = (runId: string): string => `[${runId}](${repositoryUrl}/actions/runs/${runId})`

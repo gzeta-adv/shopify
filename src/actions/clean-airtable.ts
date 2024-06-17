@@ -5,9 +5,9 @@ import { pluck } from '@/utils'
 const ACTION = 'Clean Airtable'
 const RETENTION_DAYS = 7
 
-export const cleanAirtable: Action = async ({ event }) => {
+export const cleanAirtable: Action = async ({ event, runId }) => {
   const filterByFormula = `IS_BEFORE(Date, DATEADD(NOW(), -${RETENTION_DAYS}, "days"))`
-  const logBase = { action: ACTION, event }
+  const logBase = { action: ACTION, event, runId }
 
   try {
     const { records } = await airtable.fetchAllRecords(RUNS_TABLE_ID, { filterByFormula })

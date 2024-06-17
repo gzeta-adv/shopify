@@ -61,15 +61,18 @@ const buildSyncProductsActionLog = (change: VariantChange): SyncProductsActionLo
 /**
  * Synchronizes product quantities between the Wikini CMS and Shopify.
  */
-export const syncProductsQuantity: Action = async ({ event, retries }) => {
+export const syncProductsQuantity: Action = async ({ event, retries, runId }) => {
   for (const i of Array(retries).keys()) {
     const variantChanges: VariantChange[] = []
     const logs: SyncProductsActionLog[] = []
     const isLastRetry = i === retries - 1
+    const retry = retries > 1 ? `${i + 1}/${retries}` : undefined
 
     const baseLog: ActionLog = {
       event,
       action: ACTION,
+      retry,
+      runId,
     }
 
     const location = await shopify.fetchPrimaryLocation()
@@ -80,7 +83,7 @@ export const syncProductsQuantity: Action = async ({ event, retries }) => {
 
     if (!variants.length) {
       await actionLogger.error({ ...baseLog, message: 'No product variants found' })
-      if (isLastRetry) return
+      if (isLastRetry) break
       continue
     }
 
@@ -111,7 +114,7 @@ export const syncProductsQuantity: Action = async ({ event, retries }) => {
 
     if (!changes.length) {
       await actionLogger.skip({ ...baseLog, message: 'No changes' })
-      if (isLastRetry) return
+      if (isLastRetry) break
       continue
     }
 
@@ -120,7 +123,7 @@ export const syncProductsQuantity: Action = async ({ event, retries }) => {
 
     if (!adjustData || errors) {
       await actionLogger.error({ ...baseLog, errors, message: 'Shopify API error' })
-      if (isLastRetry) return
+      if (isLastRetry) break
       continue
     }
 
@@ -147,6 +150,6 @@ export const syncProductsQuantity: Action = async ({ event, retries }) => {
       message: `Adjusted quantity of ${logs.length} product ${pluralize('variant', changes.length)}`,
       records,
     })
-    return
+    break
   }
 }
