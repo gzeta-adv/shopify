@@ -25,7 +25,7 @@ export const isDevelopment = env('NODE_ENV') === 'development'
 export const isTest = env('NODE_ENV') === 'test'
 
 /**
- * Logs an error message and exit the process.
+ * Logs a message and exit the process.
  */
 export const exit = (message?: any, code = 1): void => {
   if (message) {

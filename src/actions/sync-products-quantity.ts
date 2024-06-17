@@ -1,3 +1,4 @@
+import { exit } from 'process'
 import airtable, { FieldSet, PRODUCT_QUANTITY_TABLE_ID, actionLogger } from '@/clients/airtable'
 import shopify, { InventoryItem, LOCATION_ID, Product, ProductVariant, adminDomain } from '@/clients/shopify'
 import { AdjustQuantitiesInput } from '@/clients/shopify/inventory'
@@ -83,7 +84,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
 
     if (!variants.length) {
       await actionLogger.error({ ...baseLog, message: 'No product variants found' })
-      if (isLastRetry) break
+      if (isLastRetry) exit()
       continue
     }
 
@@ -114,7 +115,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
 
     if (!changes.length) {
       await actionLogger.skip({ ...baseLog, message: 'No changes' })
-      if (isLastRetry) break
+      if (isLastRetry) exit()
       continue
     }
 
@@ -123,7 +124,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
 
     if (!adjustData || errors) {
       await actionLogger.error({ ...baseLog, errors, message: 'Shopify API error' })
-      if (isLastRetry) break
+      if (isLastRetry) exit()
       continue
     }
 
@@ -150,6 +151,6 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
       message: `Adjusted quantity of ${logs.length} product ${pluralize('variant', changes.length)}`,
       records,
     })
-    break
+    exit()
   }
 }

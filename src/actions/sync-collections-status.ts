@@ -1,3 +1,4 @@
+import { exit } from 'process'
 import airtable, { COLLECTION_STATUS_TABLE_ID, FieldSet, actionLogger } from '@/clients/airtable'
 import shopify, {
   COLLECTION_METAFIELD,
@@ -192,7 +193,7 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
     const collections = data?.collections?.nodes || []
     if (!collections.length) {
       await actionLogger.error({ ...actionLog, message: 'No collections found' })
-      if (isLastRetry) break
+      if (isLastRetry) exit()
       continue
     }
 
@@ -205,7 +206,7 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
     ]
     if (!publications.length) {
       await actionLogger.error({ ...actionLog, message: 'No publications found' })
-      if (isLastRetry) break
+      if (isLastRetry) exit()
       continue
     }
 
@@ -214,6 +215,6 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
     )
     const unpublish = collections.filter(collection => isObsolete(collection) && countPublications(collection) > 0)
 
-    if (await updateCollections({ publish, unpublish }, publications, actionLog)) break
+    if (await updateCollections({ publish, unpublish }, publications, actionLog)) exit()
   }
 }
