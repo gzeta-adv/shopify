@@ -1,5 +1,5 @@
 import parseArgs from 'yargs-parser'
-import { ActionArgs, ActionEvent, ActionOptions } from '@/types'
+import { ActionArgs, ActionEvent, ActionOptions, Tuple } from '@/types'
 
 export { default as pluralize } from 'pluralize'
 export { parseArgs }
@@ -247,3 +247,8 @@ export const buildURLSearchParams = <T extends Record<any, any>>(params: T): URL
  * Checks if the current environment is CI.
  */
 export const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
+
+/**
+ * Creates an array with `n` copies of the given element.
+ */
+export const repeat = <T, K extends number>(element: T, n: K): Tuple<T, K> => Array(n).fill(element) as Tuple<T, K>

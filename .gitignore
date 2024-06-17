@@ -1,4 +1,6 @@
+build/
 coverage/
+dist/
 extensions/*/build/
 logs/
 node_modules/

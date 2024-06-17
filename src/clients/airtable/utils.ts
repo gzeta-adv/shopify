@@ -1,11 +1,17 @@
-import { BASE_URL, RUNS_TABLE_ID } from './data'
+import { BASE_SHARED_ID, BASE_URL, RUNS_TABLE_ID } from './data'
 import { createRecords } from './records'
-import { ActionRunPayload, ActionRunRecord, FieldSet, Records } from './types'
+import { ActionRunPayload, ActionRunRecord, FieldSet, Record, Records } from './types'
 
 import { ActionError, ActionStatus } from '@/types'
 import { exit as exitProcess, isCI, logger, titleize } from '@/utils'
 
 const source = isCI ? 'GitHub Actions' : 'Local'
+
+/**
+ * Returns the web URL of a given record.
+ */
+export const recordUrl = <T extends FieldSet>(record: Record<T>): string =>
+  `${BASE_URL}/${BASE_SHARED_ID}/${record._table.name}/${record.id}`
 
 /**
  * Logs a action run using a given payload.
@@ -63,9 +69,7 @@ export const logActionRunFromRecords = async <T extends FieldSet>({
   event,
   message,
 }: ActionError<Records<T>>): Promise<void> => {
-  const operations = records
-    ?.map((record, i) => `${i + 1}. [${record.id}](${BASE_URL}/${record._table.id}/${record.id})`)
-    .join('\n')
+  const operations = records?.map((record, i) => `${i + 1}. [${record.id}](${recordUrl(record)})`).join('\n')
 
   const run: ActionRunRecord = {
     Date: new Date().toISOString(),

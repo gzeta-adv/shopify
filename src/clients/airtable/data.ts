@@ -2,6 +2,7 @@ import { env } from '@/utils'
 
 export const API_KEY = env('AIRTABLE_API_KEY')
 export const BASE_ID = env('AIRTABLE_BASE_ID')
+export const BASE_SHARED_ID = env('AIRTABLE_BASE_SHARED_ID')
 export const BASE_URL = `https://airtable.com/${BASE_ID}`
 export const BASE_API_URL = `https://api.airtable.com/v0/${BASE_ID}`
 

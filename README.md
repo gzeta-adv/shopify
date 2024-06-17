@@ -32,7 +32,7 @@ Each action is run with a GitHub Actions workflow defined in the `.github/workfl
 
 [![](https://github.com/gzeta-adv/wikini/actions/workflows/sync-collections-status.yml/badge.svg)](https://github.com/gzeta-adv/wikini/actions/workflows/sync-collections-status.yml)
 
-The action synchronizes the publications of a Shopify collection depending on a given metafield and logs the operations in a Airtable table.
+The action synchronizes the publications of a Shopify collection depending on a given metafield and logs the operations in an Airtable table.
 
 | Workflow | Environment | Schedule | Logs |
 | -------- | ----------- | -------- | ---- |
