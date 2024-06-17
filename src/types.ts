@@ -8,13 +8,15 @@ export type Action = (options: ActionOptions) => Promise<void>
  */
 export enum ActionArgs {
   event = 'event',
+  retries = 'retries',
 }
 
 /**
  * The available options to initialize an action.
  */
 export interface ActionOptions extends Record<keyof ActionArgs, any> {
-  event?: ActionEvent
+  event: ActionEvent
+  retries: number
 }
 
 /**

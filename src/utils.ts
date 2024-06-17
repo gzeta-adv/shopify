@@ -1,5 +1,6 @@
 import parseArgs from 'yargs-parser'
 import { ActionArgs, ActionEvent, ActionOptions, Tuple } from '@/types'
+import { MAX_ACTION_RETRIES } from '@/data'
 
 export { default as pluralize } from 'pluralize'
 export { parseArgs }
@@ -207,10 +208,10 @@ export const argsMessage = (opt: any) =>
  * Parses the action arguments.
  */
 export const parseActionArgs = (args: string[]): ActionOptions => {
-  const opts = parseArgs(args)
+  const parsed = parseArgs(args)
 
-  return Object.keys(opts).reduce((acc, key) => {
-    const value = opts[key]
+  const opts = Object.keys(parsed).reduce((acc, key) => {
+    const value = parsed[key]
 
     if (!Object.hasOwn(ActionArgs, key)) {
       if (key === '_') {
@@ -222,9 +223,17 @@ export const parseActionArgs = (args: string[]): ActionOptions => {
     if (key === ActionArgs.event && !Object.hasOwn(ActionEvent, value)) {
       exit(argsMessage(value))
     }
+    if (key === ActionArgs.retries && (isNaN(value) || value < 0 || value > MAX_ACTION_RETRIES)) {
+      exit(argsMessage(value))
+    }
 
     return { ...acc, [key]: value }
   }, {} as ActionOptions)
+
+  if (!opts.event) opts.event = isTest ? ActionEvent.test : ActionEvent.local_dispatch
+  opts.retries = opts.retries || 1
+
+  return opts
 }
 
 /**
