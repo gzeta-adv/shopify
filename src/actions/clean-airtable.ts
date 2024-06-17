@@ -3,7 +3,7 @@ import { Action } from '@/types'
 import { pluck } from '@/utils'
 
 const ACTION = 'Clean Airtable'
-const RETENTION_DAYS = 10
+const RETENTION_DAYS = 7
 
 export const cleanAirtable: Action = async ({ event }) => {
   const filterByFormula = `IS_BEFORE(Date, DATEADD(NOW(), -${RETENTION_DAYS}, "days"))`

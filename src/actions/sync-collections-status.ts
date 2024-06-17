@@ -6,7 +6,7 @@ import shopify, {
   adminDomain,
   parseUserErrors,
 } from '@/clients/shopify'
-import { Action, ActionEvent, ActionStatus } from '@/types'
+import { Action, ActionLog, ActionStatus } from '@/types'
 import { logger, toID, titleize } from '@/utils'
 
 const ACTION = 'Sync Collections Status'
@@ -102,8 +102,8 @@ const createLog = ({ status, action, collection, message, publications, obsolete
 const updateCollections = async (
   args: Record<PublishAction, PublishCollection[]>,
   publications: string[],
-  event?: ActionEvent
-): Promise<void> => {
+  actionLog: ActionLog
+): Promise<boolean> => {
   const actions = Object.keys(args) as PublishAction[]
   const logs: PublishLog[] = []
   const skipped: PublishAction[] = []
@@ -133,7 +133,10 @@ const updateCollections = async (
         logger.error(`⚠︎ Failed: ${toID(id)} (${title})`)
         const errors = parseUserErrors(userErrors)
 
-        if (errors) return await actionLogger.error({ action: ACTION, errors, message: errors, event })
+        if (errors) {
+          await actionLogger.error({ ...actionLog, errors, message: errors })
+          return false
+        }
 
         const log = createLog({
           ...logBody,
@@ -141,7 +144,6 @@ const updateCollections = async (
           message: errors || 'Unknown error',
         })
         logs.push(log)
-
         continue
       }
 
@@ -156,8 +158,7 @@ const updateCollections = async (
 
     const records = await airtable.createRecords<PublishLog>({ tableId: COLLECTION_STATUS_TABLE_ID, records: logs })
     await actionLogger.fromRecords({
-      action: ACTION,
-      event,
+      ...actionLog,
       lookup: 'Collection Status Operations',
       message: `${actionTitle}ed ${updatedCollections.length} collections`,
       records,
@@ -165,35 +166,51 @@ const updateCollections = async (
   }
 
   if (skipped.length === actions.length) {
-    await actionLogger.skip({ action: ACTION, message: `No changes to synchronize`, event })
+    await actionLogger.skip({ ...actionLog, message: 'No changes' })
+    return false
   }
+
+  return true
 }
 
 /**
  * Synchronize the publications of all collections in the Shopify store depending on a boolean metafield.
  */
-export const syncCollectionsStatus: Action = async ({ event }) => {
-  const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
-  const collections = data?.collections?.nodes || []
-  if (!collections.length) {
-    return await actionLogger.error({ action: ACTION, message: 'No collections found', event })
+export const syncCollectionsStatus: Action = async ({ event, retries }) => {
+  for (const i of Array(retries).keys()) {
+    const isLastRetry = i === retries - 1
+
+    const actionLog: ActionLog = {
+      action: ACTION,
+      event,
+    }
+
+    const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
+    const collections = data?.collections?.nodes || []
+    if (!collections.length) {
+      await actionLogger.error({ ...actionLog, message: 'No collections found' })
+      if (isLastRetry) return
+      continue
+    }
+
+    const publications = [
+      ...new Set(
+        collections.flatMap(({ resourcePublicationsV2 }) =>
+          resourcePublicationsV2.map(({ publication }) => publication.id)
+        )
+      ),
+    ]
+    if (!publications.length) {
+      await actionLogger.error({ ...actionLog, message: 'No publications found' })
+      if (isLastRetry) return
+      continue
+    }
+
+    const publish = collections.filter(
+      collection => !isObsolete(collection) && countPublications(collection) < publications.length
+    )
+    const unpublish = collections.filter(collection => isObsolete(collection) && countPublications(collection) > 0)
+
+    if (await updateCollections({ publish, unpublish }, publications, actionLog)) return
   }
-
-  const publications = [
-    ...new Set(
-      collections.flatMap(({ resourcePublicationsV2 }) =>
-        resourcePublicationsV2.map(({ publication }) => publication.id)
-      )
-    ),
-  ]
-  if (!publications.length) {
-    return await actionLogger.error({ action: ACTION, message: 'No publications found', event })
-  }
-
-  const publish = collections.filter(
-    collection => !isObsolete(collection) && countPublications(collection) < publications.length
-  )
-  const unpublish = collections.filter(collection => isObsolete(collection) && countPublications(collection) > 0)
-
-  await updateCollections({ publish, unpublish }, publications, event)
 }

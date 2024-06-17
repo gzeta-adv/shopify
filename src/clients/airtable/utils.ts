@@ -2,7 +2,7 @@ import { BASE_SHARED_ID, BASE_URL, RUNS_TABLE_ID } from './data'
 import { createRecords } from './records'
 import { ActionRunPayload, ActionRunRecord, FieldSet, Record, Records } from './types'
 
-import { ActionError, ActionStatus } from '@/types'
+import { ActionLog, ActionStatus } from '@/types'
 import { isCI, logger, pluck, titleize } from '@/utils'
 
 const source = isCI ? 'GitHub Actions' : 'Local'
@@ -39,7 +39,7 @@ export const logActionRun = async <T extends ActionRunPayload>(
 /**
  * Logs a failed action run and exits the process.
  */
-export const logActionRunSkip = async ({ action, message, ...rest }: ActionError) => {
+export const logActionRunSkip = async ({ action, message, ...rest }: ActionLog) => {
   logger.notice(message)
   await logActionRun(action, { status: ActionStatus.skipped, message, ...rest })
 }
@@ -47,7 +47,7 @@ export const logActionRunSkip = async ({ action, message, ...rest }: ActionError
 /**
  * Logs a successful action run and exits the process.
  */
-export const logActionRunSuccess = async ({ action, message, ...rest }: ActionError) => {
+export const logActionRunSuccess = async ({ action, message, ...rest }: ActionLog) => {
   logger.notice(message)
   await logActionRun(action, { status: ActionStatus.success, message, ...rest })
 }
@@ -55,7 +55,7 @@ export const logActionRunSuccess = async ({ action, message, ...rest }: ActionEr
 /**
  * Logs a failed action run and exits the process.
  */
-export const logActionRunError = async ({ action, errors, message, ...rest }: ActionError) => {
+export const logActionRunError = async ({ action, errors, message, ...rest }: ActionLog) => {
   const errorLog = JSON.stringify(errors, null, 2)
   logger.error(message)
   await logActionRun(action, { status: ActionStatus.failed, errors: errorLog, message, ...rest })
@@ -70,7 +70,7 @@ export const logActionRunFromRecords = async <T extends FieldSet>({
   lookup,
   message,
   records,
-}: ActionError<Records<T>>): Promise<void> => {
+}: ActionLog<Records<T>>): Promise<void> => {
   const run: ActionRunRecord = {
     Date: new Date().toISOString(),
     Status: ActionStatus.success,

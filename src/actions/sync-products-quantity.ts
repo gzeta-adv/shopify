@@ -2,7 +2,7 @@ import airtable, { FieldSet, PRODUCT_QUANTITY_TABLE_ID, actionLogger } from '@/c
 import shopify, { InventoryItem, LOCATION_ID, Product, ProductVariant, adminDomain } from '@/clients/shopify'
 import { AdjustQuantitiesInput } from '@/clients/shopify/inventory'
 import wikini from '@/clients/wikini'
-import { Action, ActionStatus } from '@/types'
+import { Action, ActionLog, ActionStatus } from '@/types'
 import { logger, pluralize, toID, toPositive } from '@/utils'
 
 const ACTION = 'Sync Products Quantity'
@@ -61,78 +61,92 @@ const buildSyncProductsActionLog = (change: VariantChange): SyncProductsActionLo
 /**
  * Synchronizes product quantities between the Wikini CMS and Shopify.
  */
-export const syncProductsQuantity: Action = async ({ event }) => {
-  const variantChanges: VariantChange[] = []
-  const logs: SyncProductsActionLog[] = []
+export const syncProductsQuantity: Action = async ({ event, retries }) => {
+  for (const i of Array(retries).keys()) {
+    const variantChanges: VariantChange[] = []
+    const logs: SyncProductsActionLog[] = []
+    const isLastRetry = i === retries - 1
 
-  const location = await shopify.fetchPrimaryLocation()
-  const locationId = location?.id || LOCATION_ID
+    const baseLog: ActionLog = {
+      event,
+      action: ACTION,
+    }
 
-  const { data } = await shopify.fetchAllProductVariants<Variant>()
-  const variants = data?.productVariants?.edges || []
+    const location = await shopify.fetchPrimaryLocation()
+    const locationId = location?.id || LOCATION_ID
 
-  if (!variants.length) {
-    return await actionLogger.error({ action: ACTION, message: 'No product variants found', event })
+    const { data } = await shopify.fetchAllProductVariants<Variant>()
+    const variants = data?.productVariants?.edges || []
+
+    if (!variants.length) {
+      await actionLogger.error({ ...baseLog, message: 'No product variants found' })
+      if (isLastRetry) return
+      continue
+    }
+
+    const items = variants.map(({ sku }) => ({ variantId: sku }))
+    const availabilities = await wikini.verifyAvailability({ items })
+
+    const changes: AdjustQuantitiesInput['changes'] = availabilities.reduce(
+      (changes, { variantId, actualAvailability }) => {
+        const variant = variants.find(({ sku }) => sku === variantId)
+
+        if (!variant) return changes
+
+        const { inventoryItem, inventoryQuantity } = variant
+        const isDuplicate = changes.some(({ inventoryItemId }) => inventoryItemId === inventoryItem.id)
+
+        if (inventoryQuantity === actualAvailability || inventoryQuantity < 1 || actualAvailability > 0 || isDuplicate)
+          return changes
+
+        const quantities = [inventoryQuantity, actualAvailability].map(toPositive)
+        const delta = actualAvailability - inventoryQuantity
+
+        variantChanges.push({ variant, quantities, delta })
+
+        return [...changes, { delta, inventoryItemId: inventoryItem.id, locationId }]
+      },
+      [] as AdjustQuantitiesInput['changes']
+    )
+
+    if (!changes.length) {
+      await actionLogger.skip({ ...baseLog, message: 'No changes' })
+      if (isLastRetry) return
+      continue
+    }
+
+    const input = { ...BASE_INPUT, changes }
+    const { data: adjustData, errors } = await shopify.adjustQuantities({ input })
+
+    if (!adjustData || errors) {
+      await actionLogger.error({ ...baseLog, errors, message: 'Shopify API error' })
+      if (isLastRetry) return
+      continue
+    }
+
+    const { changes: inventoryChanges, createdAt } = adjustData.inventoryAdjustQuantities.inventoryAdjustmentGroup
+
+    for (const change of inventoryChanges) {
+      if (change.name !== BASE_INPUT.name) continue
+
+      const variantChange = variantChanges.find(({ variant }) => variant.inventoryItem.id === change.item.id)
+      if (!variantChange) continue
+
+      logger.info(`✓ [${variantChange.variant.sku}] ${variantChange.quantities.join(' → ')}`)
+      logs.push(buildSyncProductsActionLog({ ...variantChange, delta: change.delta, date: createdAt }))
+    }
+
+    const records = await airtable.createRecords<SyncProductsActionLog>({
+      tableId: PRODUCT_QUANTITY_TABLE_ID,
+      records: logs,
+    })
+
+    await actionLogger.fromRecords({
+      ...baseLog,
+      lookup: 'Product Quantity Operations',
+      message: `Adjusted quantity of ${logs.length} product ${pluralize('variant', changes.length)}`,
+      records,
+    })
+    return
   }
-
-  const items = variants.map(({ sku }) => ({ variantId: sku }))
-  const availabilities = await wikini.verifyAvailability({ items })
-
-  const changes: AdjustQuantitiesInput['changes'] = availabilities.reduce(
-    (changes, { variantId, actualAvailability }) => {
-      const variant = variants.find(({ sku }) => sku === variantId)
-
-      if (!variant) return changes
-
-      const { inventoryItem, inventoryQuantity } = variant
-      const isDuplicate = changes.some(({ inventoryItemId }) => inventoryItemId === inventoryItem.id)
-
-      if (inventoryQuantity === actualAvailability || inventoryQuantity < 1 || actualAvailability > 0 || isDuplicate)
-        return changes
-
-      const quantities = [inventoryQuantity, actualAvailability].map(toPositive)
-      const delta = actualAvailability - inventoryQuantity
-
-      variantChanges.push({ variant, quantities, delta })
-
-      return [...changes, { delta, inventoryItemId: inventoryItem.id, locationId }]
-    },
-    [] as AdjustQuantitiesInput['changes']
-  )
-
-  if (!changes.length) {
-    return await actionLogger.skip({ action: ACTION, message: 'No changes', event })
-  }
-
-  const input = { ...BASE_INPUT, changes }
-  const { data: adjustData, errors } = await shopify.adjustQuantities({ input })
-
-  if (!adjustData || errors) {
-    return await actionLogger.error({ action: ACTION, errors, message: 'Shopify API error', event })
-  }
-
-  const { changes: inventoryChanges, createdAt } = adjustData.inventoryAdjustQuantities.inventoryAdjustmentGroup
-
-  for (const change of inventoryChanges) {
-    if (change.name !== BASE_INPUT.name) continue
-
-    const variantChange = variantChanges.find(({ variant }) => variant.inventoryItem.id === change.item.id)
-    if (!variantChange) continue
-
-    logger.info(`✓ [${variantChange.variant.sku}] ${variantChange.quantities.join(' → ')}`)
-    logs.push(buildSyncProductsActionLog({ ...variantChange, delta: change.delta, date: createdAt }))
-  }
-
-  const records = await airtable.createRecords<SyncProductsActionLog>({
-    tableId: PRODUCT_QUANTITY_TABLE_ID,
-    records: logs,
-  })
-
-  await actionLogger.fromRecords({
-    action: ACTION,
-    event,
-    lookup: 'Product Quantity Operations',
-    message: `Adjusted quantity of ${logs.length} product ${pluralize('variant', changes.length)}`,
-    records,
-  })
 }

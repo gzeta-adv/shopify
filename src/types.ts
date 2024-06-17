@@ -42,12 +42,13 @@ export enum ActionStatus {
 /**
  * The available parameters to initialize an action error.
  */
-export interface ActionError<T = any> {
+export interface ActionLog<T = any> {
   action: string
   errors?: any
   event?: string
   lookup?: 'Product Quantity Operations' | 'Collection Status Operations'
   message?: string
+  notes?: string
   records?: T
 }
 
