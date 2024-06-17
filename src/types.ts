@@ -44,10 +44,11 @@ export enum ActionStatus {
  */
 export interface ActionError<T = any> {
   action: string
-  records?: T
-  event?: string
   errors?: any
+  event?: string
+  lookup?: 'Product Quantity Operations' | 'Collection Status Operations'
   message?: string
+  records?: T
 }
 
 /**

@@ -10,7 +10,8 @@ export interface ActionRunRecord extends FieldSet {
   Date: string
   Status: ActionStatus
   Action: string
-  Operations?: string
+  'Product Quantity Operations'?: string[]
+  'Collection Status Operations'?: string[]
   Source: string
   Event?: string
   Errors?: string
@@ -20,12 +21,13 @@ export interface ActionRunRecord extends FieldSet {
 
 export interface ActionRunPayload {
   status: ActionStatus
-  date?: string
   action?: string
-  operations?: string
-  source?: string
-  event?: string
+  date?: string
   errors?: string
+  event?: string
+  lookup?: 'Product Quantity Operations' | 'Collection Status Operations'
   message?: string
   notes?: string
+  operations?: string[]
+  source?: string
 }

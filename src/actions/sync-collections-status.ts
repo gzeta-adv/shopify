@@ -133,7 +133,7 @@ const updateCollections = async (
         logger.error(`⚠︎ Failed: ${toID(id)} (${title})`)
         const errors = parseUserErrors(userErrors)
 
-        if (errors) await actionLogger.error({ action: ACTION, errors, message: errors, event })
+        if (errors) return await actionLogger.error({ action: ACTION, errors, message: errors, event })
 
         const log = createLog({
           ...logBody,
@@ -157,9 +157,10 @@ const updateCollections = async (
     const records = await airtable.createRecords<PublishLog>({ tableId: COLLECTION_STATUS_TABLE_ID, records: logs })
     await actionLogger.fromRecords({
       action: ACTION,
-      records,
-      message: `${actionTitle}ed ${updatedCollections.length} collections`,
       event,
+      lookup: 'Collection Status Operations',
+      message: `${actionTitle}ed ${updatedCollections.length} collections`,
+      records,
     })
   }
 

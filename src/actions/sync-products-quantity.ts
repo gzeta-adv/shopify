@@ -101,7 +101,7 @@ export const syncProductsQuantity: Action = async ({ event }) => {
   )
 
   if (!changes.length) {
-    return await actionLogger.skip({ action: ACTION, message: 'No changes', event }, true)
+    return await actionLogger.skip({ action: ACTION, message: 'No changes', event })
   }
 
   const input = { ...BASE_INPUT, changes }
@@ -130,8 +130,9 @@ export const syncProductsQuantity: Action = async ({ event }) => {
 
   await actionLogger.fromRecords({
     action: ACTION,
-    records,
-    message: `Adjusted quantity of ${logs.length} product ${pluralize('variant', changes.length)}`,
     event,
+    lookup: 'Product Quantity Operations',
+    message: `Adjusted quantity of ${logs.length} product ${pluralize('variant', changes.length)}`,
+    records,
   })
 }
