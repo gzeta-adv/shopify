@@ -91,7 +91,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
     const items = variants.map(({ sku }) => ({ variantId: sku }))
     const availabilities = await pim.verifyAvailability({ items })
 
-    const changes: AdjustQuantitiesInput['changes'] = availabilities.reduce(
+    const updates = availabilities.reduce(
       (changes, { variantId, actualAvailability }) => {
         const variant = variants.find(({ sku }) => sku === variantId)
 
@@ -113,6 +113,17 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
       [] as AdjustQuantitiesInput['changes']
     )
 
+    const { data: changedData } = await shopify.fetchProductVariants<Variant>({
+      ids: variantChanges.map(({ variant }) => variant.id),
+    })
+    const changedVariants = changedData?.productVariants?.edges || []
+
+    const changes = updates.filter(({ inventoryItemId }) => {
+      const variantChange = variantChanges.find(({ variant }) => variant.inventoryItem.id === inventoryItemId)
+      const changedVariant = changedVariants.find(({ node }) => node.inventoryItem.id === inventoryItemId)
+      return variantChange?.quantities[0] === changedVariant?.node.inventoryQuantity
+    })
+
     if (!changes.length) {
       await actionLogger.skip({ ...baseLog, message: 'No changes' })
       if (isLastRetry) exit()
@@ -128,7 +139,8 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
       continue
     }
 
-    const { changes: inventoryChanges, createdAt } = adjustData.inventoryAdjustQuantities.inventoryAdjustmentGroup
+    const { changes: inventoryChanges = [], createdAt } =
+      adjustData.inventoryAdjustQuantities?.inventoryAdjustmentGroup || {}
 
     for (const change of inventoryChanges) {
       if (change.name !== BASE_INPUT.name) continue
