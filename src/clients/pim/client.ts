@@ -3,7 +3,7 @@ import fetch from './requests/fetch'
 import { verifyAvailability } from './requests/verify-availability'
 import { env } from '@/utils'
 
-const API_TOKEN = env('WIKINI_TOKEN')
+const API_TOKEN = env('PIM_TOKEN')
 
 export const client = {
   apiUrl: API_URL,

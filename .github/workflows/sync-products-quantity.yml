@@ -29,6 +29,6 @@ jobs:
           SHOPIFY_ACCESS_TOKEN: ${{ secrets.SHOPIFY_ACCESS_TOKEN }}
           SHOPIFY_LOCATION_ID: ${{ secrets.SHOPIFY_LOCATION_ID }}
           SHOPIFY_STORE_ID: ${{ secrets.SHOPIFY_STORE_ID }}
-          WIKINI_API_URL: ${{ secrets.WIKINI_API_URL }}
-          WIKINI_TOKEN: ${{ secrets.WIKINI_TOKEN }}
-          WIKINI_VERIFY_ENDPOINT: ${{ secrets.WIKINI_VERIFY_ENDPOINT }}
+          PIM_API_URL: ${{ secrets.PIM_API_URL }}
+          PIM_TOKEN: ${{ secrets.PIM_TOKEN }}
+          PIM_VERIFY_ENDPOINT: ${{ secrets.PIM_VERIFY_ENDPOINT }}

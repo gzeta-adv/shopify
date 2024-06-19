@@ -1,4 +1,4 @@
-import client, { WIKINI_RESOURCES_LIMIT } from '@/clients/wikini'
+import client, { PIM_RESOURCES_LIMIT } from '@/clients/pim'
 import { RequestMethod } from '@/types'
 import { chunks } from '@/utils'
 
@@ -25,9 +25,9 @@ const fetchAvailability = async (items: Item[]) =>
   })
 
 /**
- * Verify the availability of items using the Wikini API.
+ * Verify the availability of items using the PIM API.
  */
-export const verifyAvailability = async ({ items, limit = WIKINI_RESOURCES_LIMIT }: VerifyAvailabilityRequest) => {
+export const verifyAvailability = async ({ items, limit = PIM_RESOURCES_LIMIT }: VerifyAvailabilityRequest) => {
   const availabilities: VerifyAvailabilityResponse = []
 
   for (const chunk of chunks(items, limit)) {

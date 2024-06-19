@@ -2,7 +2,7 @@ import { exit } from 'process'
 import airtable, { FieldSet, PRODUCT_QUANTITY_TABLE_ID, actionLogger } from '@/clients/airtable'
 import shopify, { InventoryItem, LOCATION_ID, Product, ProductVariant, adminDomain } from '@/clients/shopify'
 import { AdjustQuantitiesInput } from '@/clients/shopify/inventory'
-import wikini from '@/clients/wikini'
+import pim from '@/clients/pim'
 import { Action, ActionLog, ActionStatus } from '@/types'
 import { logger, pluralize, toID, toPositive } from '@/utils'
 
@@ -60,7 +60,7 @@ const buildSyncProductsActionLog = (change: VariantChange): SyncProductsActionLo
 })
 
 /**
- * Synchronizes product quantities between the Wikini CMS and Shopify.
+ * Synchronizes product quantities between the PIM and Shopify.
  */
 export const syncProductsQuantity: Action = async ({ event, retries, runId }) => {
   for (const i of Array(retries).keys()) {
@@ -89,7 +89,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
     }
 
     const items = variants.map(({ sku }) => ({ variantId: sku }))
-    const availabilities = await wikini.verifyAvailability({ items })
+    const availabilities = await pim.verifyAvailability({ items })
 
     const changes: AdjustQuantitiesInput['changes'] = availabilities.reduce(
       (changes, { variantId, actualAvailability }) => {

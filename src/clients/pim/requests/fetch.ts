@@ -1,4 +1,4 @@
-import client from '@/clients/wikini'
+import client from '@/clients/pim'
 import { RequestMethod } from '@/types'
 
 export default async <T extends Record<string, any> | Record<string, any>[]>(
