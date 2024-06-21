@@ -23,7 +23,6 @@
   "dependencies": {
     "@googleapis/sheets": "^8.0.0",
     "@shopify/admin-api-client": "^0.2.9",
-    "airtable": "^0.12.2",
     "dotenv": "^16.4.5",
     "pluralize": "^8.0.0",
     "yargs-parser": "^21.1.1"
