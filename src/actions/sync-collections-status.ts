@@ -1,10 +1,8 @@
 import { exit } from 'process'
-import sheets, { SHEETS, hyperlink } from '@@/google/sheets'
+import sheets, { hyperlink } from '@@/google/sheets'
 import shopify, { COLLECTION_METAFIELD, RESOURCES_LIMIT, Collection, adminDomain, parseUserErrors } from '@@/shopify'
-import { Action, ActionRunPayload, ActionStatus } from '@/types'
-import { logger, toID, titleize, formatDate } from '@/utils'
-
-const ACTION = 'Sync Collections Status'
+import { Action, ActionPayload, ActionStatus } from '@/types'
+import { logger, toID, titleize } from '@/utils'
 
 interface PublishCollection extends Collection {
   metafields: {
@@ -25,28 +23,6 @@ interface PublishCollection extends Collection {
 enum PublishAction {
   publish = 'publish',
   unpublish = 'unpublish',
-}
-
-interface PublishLog {
-  Date: string
-  Status: ActionStatus
-  Action: 'Publish' | 'Unpublish'
-  Collection: string
-  Obsolete: boolean
-  Products: number
-  'Previous Publications': number
-  'New Publications': number
-  Message?: string
-  Notes?: string
-}
-
-interface PublishLogOptions {
-  status: ActionStatus
-  action: PublishAction
-  collection: PublishCollection
-  publications: string[]
-  obsolete: boolean
-  message?: string
 }
 
 const fields = `
@@ -73,90 +49,73 @@ const fields = `
 `
 
 const countPublications = ({ resourcePublicationsV2 }: PublishCollection) => resourcePublicationsV2.length
-
+const collectionHyperlink = (collection: Collection) =>
+  hyperlink(`https://${adminDomain}/collections/${toID(collection.id)}`, collection.title)
 const isObsolete = ({ metafields }: PublishCollection) => {
   const { value } = metafields.find(({ key }) => key === COLLECTION_METAFIELD) || {}
   return value === 'true'
 }
 
-const createLog = ({ status, action, collection, message, publications, obsolete }: PublishLogOptions): PublishLog => ({
-  Date: formatDate(),
-  Status: titleize(status) as PublishLog['Status'],
-  Action: titleize(action) as PublishLog['Action'],
-  Collection: hyperlink(`https://${adminDomain}/collections/${toID(collection.id)}`, collection.title),
-  Obsolete: obsolete,
-  Products: collection.productsCount.count,
-  'Previous Publications': collection.resourcePublicationsV2.length,
-  'New Publications': action === PublishAction.publish ? publications.length : 0,
-  Message: message,
-  Notes: '',
-})
-
 const updateCollections = async (
   args: Record<PublishAction, PublishCollection[]>,
   publications: string[],
-  actionLog: ActionRunPayload
+  actionLog: ActionPayload
 ): Promise<boolean> => {
   const actions = Object.keys(args) as PublishAction[]
-  const logs: PublishLog[] = []
-  const skipped: PublishAction[] = []
+  const updatedCollections = []
 
   for (const action of actions) {
-    const collections = args[action]
     const actionTitle = titleize(action)
-
-    if (!collections.length) {
-      skipped.push(action)
-      continue
-    }
+    const collections = args[action]
+    if (!collections.length) continue
 
     const fn = action === PublishAction.publish ? shopify.publishCollection : shopify.unpublishCollection
-    const updatedCollections = []
 
     logger.info(`${actionTitle}ing ${collections.length} collections...`)
 
     for (const collection of collections) {
       const { id, title } = collection
-      const { collection: updated, userErrors } = await fn({ id, publications })
-
-      const obsolete = isObsolete(collection)
-      const logBody = { action, collection, publications, obsolete }
+      const { collection: updated, userErrors } = await fn({ id, publications, fields })
+      const logBody = {
+        ...actionLog,
+        action,
+        collection: collectionHyperlink(updated as Collection),
+        products: collection.productsCount.count,
+        previous: countPublications(collection),
+        new: countPublications(updated as PublishCollection) || 0,
+      }
 
       if (!updated) {
         logger.error(`⚠︎ Failed: ${toID(id)} (${title})`)
         const errors = parseUserErrors(userErrors)
 
         if (errors) {
-          await sheets.logFailedRun({ ...actionLog, errors, message: errors })
+          await sheets.logSyncCollectionsStatus({
+            ...actionLog,
+            status: ActionStatus.failed,
+            errors,
+            message: 'User errors',
+          })
           return false
         }
 
-        const log = createLog({
+        await sheets.logSyncCollectionsStatus({
           ...logBody,
           status: ActionStatus.failed,
           message: errors || 'Unknown error',
         })
-        logs.push(log)
         continue
       }
 
       updatedCollections.push(updated)
       logger.info(`✓ ${actionTitle}: ${toID(updated.id)} (${updated.title})`)
 
-      const log = createLog({ ...logBody, status: ActionStatus.success })
-      logs.push(log)
+      await sheets.logSyncCollectionsStatus({ ...logBody, status: ActionStatus.success })
     }
 
     logger.notice(`${actionTitle}ed ${updatedCollections.length} out of ${collections.length} collections`)
-
-    const records = await sheets.appendRows<PublishLog>({ sheet: SHEETS.SyncCollectionsStatus.name, values: logs })
-    await sheets.logRun({
-      ...actionLog,
-      status: ActionStatus.success,
-      message: `${actionTitle}ed ${updatedCollections.length} collections`,
-      range: records.updates?.updatedRange,
-    })
   }
+  if (!updatedCollections.length) logger.notice('No changes')
   return true
 }
 
@@ -166,19 +125,17 @@ const updateCollections = async (
 export const syncCollectionsStatus: Action = async ({ event, retries, runId }) => {
   for (const i of Array(retries).keys()) {
     const isLastRetry = i === retries - 1
-    const retry = retries > 1 ? `${i + 1}/${retries}` : undefined
 
-    const actionLog: ActionRunPayload = {
-      action: ACTION,
-      event,
-      retry,
-      runId,
-    }
+    const actionLog = { event, runId }
 
     const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
     const collections = data?.collections?.nodes || []
     if (!collections.length) {
-      await sheets.logFailedRun({ ...actionLog, message: 'No collections found' })
+      await sheets.logSyncCollectionsStatus({
+        ...actionLog,
+        status: ActionStatus.failed,
+        message: 'No collections found',
+      })
       if (isLastRetry) exit()
       continue
     }
@@ -191,15 +148,17 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
       ),
     ]
     if (!publications.length) {
-      await sheets.logFailedRun({ ...actionLog, message: 'No publications found' })
+      await sheets.logSyncCollectionsStatus({
+        ...actionLog,
+        status: ActionStatus.failed,
+        message: 'No publications found',
+      })
       if (isLastRetry) exit()
       continue
     }
 
-    const publish = collections.filter(
-      collection => !isObsolete(collection) && countPublications(collection) < publications.length
-    )
-    const unpublish = collections.filter(collection => isObsolete(collection) && countPublications(collection) > 0)
+    const publish = collections.filter(col => !isObsolete(col) && countPublications(col) < publications.length)
+    const unpublish = collections.filter(col => isObsolete(col) && countPublications(col) > 0)
 
     if (await updateCollections({ publish, unpublish }, publications, actionLog)) exit()
   }

@@ -1,3 +1,4 @@
+/* eslint-disable max-lines */
 import parseArgs from 'yargs-parser'
 import { MAX_ACTION_RETRIES, repositoryUrl } from '@/data'
 import { ActionArgs, ActionEvent, ActionOptions, Tuple } from '@/types'
@@ -263,6 +264,11 @@ export const buildURLSearchParams = <T extends Record<any, any>>(params: T): URL
 export const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
 
 /**
+ * The source of the event.
+ */
+export const eventSource = isCI ? 'GitHub Actions' : 'Local'
+
+/**
  * Creates an array with `n` copies of the given element.
  */
 export const repeat = <T, K extends number>(element: T, n: K): Tuple<T, K> => Array(n).fill(element) as Tuple<T, K>
@@ -273,11 +279,25 @@ export const repeat = <T, K extends number>(element: T, n: K): Tuple<T, K> => Ar
 export const getActionRunURL = (runId?: string): string => `${repositoryUrl}/actions/runs/${runId}`
 
 /**
+ * Pads the specified number with leading zeros and returns it as a string.
+ */
+export const addLeadingZeros = (input: number, length = 2): string => String(input).padStart(length, '0')
+
+/**
+ * Pads the specified number with leading zeros and returns it as a string.
+ */
+export const padTime = (time: string): string =>
+  time
+    .split(':')
+    .map(n => addLeadingZeros(parseInt(n)))
+    .join(':')
+
+/**
  * Formats a date to a string.
  */
 export const formatDate = (date: Date = new Date(), time = true): string => {
   date.setHours(date.getHours() + 2)
   const [dateString, timeString] = date.toISOString().split('T')
   if (!time) return dateString
-  return `${dateString} ${timeString.split('.').at(0)}`
+  return `${dateString} ${padTime(timeString.split('.').at(0) as string)}`
 }

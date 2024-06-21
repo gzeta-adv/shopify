@@ -42,61 +42,35 @@ export enum ActionStatus {
 }
 
 /**
- * The available parameters to initialize an action error.
- */
-export interface ActionLog<T = any> {
-  action: string
-  errors?: any
-  event?: string
-  lookup?: string
-  message?: string
-  notes?: string
-  records?: T
-  retry?: string
-  runId?: string
-}
-
-/**
  * Available parameters to log an action run.
  */
-export interface ActionRunPayload {
-  status?: ActionStatus
-  action?: string
+export interface ActionPayload {
   date?: string
-  errors?: any
+  status?: ActionStatus
   event?: string
-  message?: string
-  notes?: string
-  operations?: string
-  range?: string | null
-  sheet?: string
-  retry?: string
   runId?: string
-  source?: string
+  message?: string
+  errors?: string
 }
 
 /**
  * Record of an action run.
  */
-export interface ActionRunRecord {
+export interface ActionLog {
   Date: string
   Status: ActionStatus
-  Action: string
-  Operations?: string[]
   Source: string
   Event?: string
   'GitHub Run'?: string
-  Errors?: string
   Message?: string
+  Errors?: string
   Notes?: string
 }
 
 /**
  * Base object interface.
  */
-export interface BaseObject extends Record<string, any> {
-  id: string
-}
+export interface BaseObject extends Record<string, any> {}
 
 /**
  * The available request methods.

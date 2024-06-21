@@ -1,28 +1,13 @@
-import { exit } from 'process'
-import sheets, { SHEETS, hyperlink } from '@@/google/sheets'
+import sheets, { hyperlink } from '@@/google/sheets'
 import shopify, { InventoryItem, LOCATION_ID, Product, ProductVariant, adminDomain } from '@@/shopify'
 import { AdjustQuantitiesInput } from '@@/shopify/inventory/update'
 import pim from '@/clients/pim'
-import { Action, ActionLog, ActionStatus } from '@/types'
-import { formatDate, logger, pluralize, toID, toPositive } from '@/utils'
-
-const ACTION = 'Sync Products Quantity'
+import { Action, ActionPayload, ActionStatus } from '@/types'
+import { logger, pluralize, toID } from '@/utils'
 
 const BASE_INPUT = {
   reason: 'correction',
   name: 'available',
-}
-
-interface SyncProductsActionLog {
-  Date: string
-  Status: ActionStatus
-  Product: string
-  Variant: string
-  'Previous Quantity': number
-  'New Quantity': number
-  Delta: number
-  Message?: string
-  Notes?: string
 }
 
 interface Variant extends ProductVariant {
@@ -41,39 +26,22 @@ interface VariantChange {
 }
 
 const productUrl = (product: Product): string => `https://${adminDomain}/products/${toID(product.id)}`
-
+const productHyperlink = (product: Product) => hyperlink(productUrl(product), product.title)
 const variantUrl = (variant: Variant): string => `${productUrl(variant.product)}/variants/${toID(variant.id)}`
-
 const variantName = (variant: Variant): string => variant.displayName.replace(`${variant.product.title} - `, '')
-
-const buildSyncProductsActionLog = (change: VariantChange): SyncProductsActionLog => ({
-  Date: formatDate(),
-  Status: ActionStatus.success,
-  Product: hyperlink(productUrl(change.variant.product), change.variant.product.title),
-  Variant: hyperlink(variantUrl(change.variant), variantName(change.variant)),
-  'Previous Quantity': change.quantities[0],
-  'New Quantity': change.quantities[1],
-  Delta: change.delta,
-  Message: '',
-  Notes: '',
-})
+const variantHyperlink = (variant: Variant) => hyperlink(variantUrl(variant), variantName(variant))
 
 /**
  * Synchronizes product quantities between the PIM and Shopify.
  */
 export const syncProductsQuantity: Action = async ({ event, retries, runId }) => {
+  let updatesCount = 0
+
   for (const i of Array(retries).keys()) {
     const variantChanges: VariantChange[] = []
-    const logs: SyncProductsActionLog[] = []
     const isLastRetry = i === retries - 1
-    const retry = retries > 1 ? `${i + 1}/${retries}` : undefined
 
-    const baseLog: ActionLog = {
-      event,
-      action: ACTION,
-      retry,
-      runId,
-    }
+    const baseLog: ActionPayload = { event, runId }
 
     const location = await shopify.fetchPrimaryLocation()
     const locationId = location?.id || LOCATION_ID
@@ -82,8 +50,12 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
     const variants = data?.productVariants?.edges || []
 
     if (!variants.length) {
-      await sheets.logFailedRun({ ...baseLog, message: 'No product variants found' })
-      if (isLastRetry) exit()
+      await sheets.logSyncProductsQuantity({
+        ...baseLog,
+        status: ActionStatus.failed,
+        message: 'No product variants found',
+      })
+      if (isLastRetry) break
       continue
     }
 
@@ -102,7 +74,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
         if (inventoryQuantity === actualAvailability || inventoryQuantity < 1 || actualAvailability > 0 || isDuplicate)
           return changes
 
-        const quantities = [inventoryQuantity, actualAvailability].map(toPositive)
+        const quantities = [inventoryQuantity, actualAvailability]
         const delta = actualAvailability - inventoryQuantity
 
         variantChanges.push({ variant, quantities, delta })
@@ -127,13 +99,17 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
     const { data: adjustData, errors } = await shopify.adjustQuantities({ input })
 
     if (!adjustData || errors) {
-      await sheets.logFailedRun({ ...baseLog, errors, message: 'Shopify API error' })
-      if (isLastRetry) exit()
+      await sheets.logSyncProductsQuantity({
+        ...baseLog,
+        status: ActionStatus.failed,
+        errors: JSON.stringify(errors),
+        message: 'Shopify API error',
+      })
+      if (isLastRetry) break
       continue
     }
 
-    const { changes: inventoryChanges = [], createdAt } =
-      adjustData.inventoryAdjustQuantities?.inventoryAdjustmentGroup || {}
+    const { changes: inventoryChanges = [] } = adjustData.inventoryAdjustQuantities?.inventoryAdjustmentGroup || {}
 
     for (const change of inventoryChanges) {
       if (change.name !== BASE_INPUT.name) continue
@@ -142,19 +118,20 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
       if (!variantChange) continue
 
       logger.info(`✓ [${variantChange.variant.sku}] ${variantChange.quantities.join(' → ')}`)
-      logs.push(buildSyncProductsActionLog({ ...variantChange, delta: change.delta, date: createdAt }))
+      await sheets.logSyncProductsQuantity({
+        ...baseLog,
+        status: ActionStatus.success,
+        product: productHyperlink(variantChange.variant.product),
+        variant: variantHyperlink(variantChange.variant),
+        previous: variantChange.quantities[0],
+        new: variantChange.quantities[1],
+        delta: change.delta,
+      })
+      updatesCount++
     }
-
-    const records = await sheets.appendRows<SyncProductsActionLog>({
-      sheet: SHEETS.SyncProductsQuantity.name,
-      values: logs,
-    })
-    await sheets.logRun({
-      ...baseLog,
-      status: ActionStatus.success,
-      message: `Adjusted quantity of ${logs.length} product ${pluralize('variant', changes.length)}`,
-      range: records.updates?.updatedRange,
-    })
-    exit()
   }
+
+  logger.notice(
+    updatesCount ? `\nAdjusted quantity of ${updatesCount} product ${pluralize('variant', updatesCount)}` : 'No changes'
+  )
 }

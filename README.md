@@ -1,7 +1,6 @@
 [spreadsheet]: https://docs.google.com/spreadsheets/d/1T-2g8k8qZdEvTofj0c3ZlloUoXHy0JnwDNXcj_ONHaA
-[sync-collections-status-sheet]: https://docs.google.com/spreadsheets/d/1T-2g8k8qZdEvTofj0c3ZlloUoXHy0JnwDNXcj_ONHaA/edit?gid=1906573394#gid=1906573394
-[sync-products-quantity-sheet]: https://docs.google.com/spreadsheets/d/1T-2g8k8qZdEvTofj0c3ZlloUoXHy0JnwDNXcj_ONHaA/edit?gid=1295517665#gid=1295517665
-[runs-sheet]: https://docs.google.com/spreadsheets/d/1T-2g8k8qZdEvTofj0c3ZlloUoXHy0JnwDNXcj_ONHaA/edit?gid=1397703281#gid=1397703281
+[sync-collections-status-sheet]: https://docs.google.com/spreadsheets/d/1T-2g8k8qZdEvTofj0c3ZlloUoXHy0JnwDNXcj_ONHaA?gid=1270546238#gid=1270546238
+[sync-products-quantity-sheet]: https://docs.google.com/spreadsheets/d/1T-2g8k8qZdEvTofj0c3ZlloUoXHy0JnwDNXcj_ONHaA?gid=499385108#gid=499385108
 
 # Shopify
 
@@ -36,7 +35,7 @@ The action synchronizes the publications of a Shopify collection depending on a 
 
 | Workflow | Environment | Schedule | Logs |
 | -------- | ----------- | -------- | ---- |
-| [`sync-collections-status`](.github/workflows/sync-collections-status.yml) | `GOOGLE_SHEETS_CLIENT_EMAIL`<br>`GOOGLE_SHEETS_PRIVATE_KEY`<br>`GOOGLE_SHEETS_SPREADSHEET_ID`<br>`GOOGLE_SHEETS_RUNS_SHEET_NAME` (optional)<br>`GOOGLE_SHEETS_RUNS_SHEET_ID` (optional)<br>`GOOGLE_SHEETS_SYNC_COLLECTIONS_STATUS_SHEET_NAME` (optional)<br>`GOOGLE_SHEETS_SYNC_COLLECTIONS_STATUS_SHEET_ID` (optional)<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_STORE_ID` | Every 3 hours | [Collection Status Operations][sync-collections-status-sheet] |
+| [`sync-collections-status`](.github/workflows/sync-collections-status.yml) | `GOOGLE_SHEETS_CLIENT_EMAIL`<br>`GOOGLE_SHEETS_PRIVATE_KEY`<br>`GOOGLE_SHEETS_SPREADSHEET_ID`<br>`GOOGLE_SHEETS_SYNC_COLLECTIONS_STATUS_SHEET`<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_STORE_ID` | Every 3 hours | [Collection Status Operations][sync-collections-status-sheet] |
 
 ### Sync Products Quantity
 
@@ -46,21 +45,11 @@ The action synchronizes the quantity of the products in a customer PIM with the 
 
 | Workflow | Environment | Schedule | Logs |
 | -------- | ----------- | -------- | ---- |
-| [`sync-products-quantity`](.github/workflows/sync-products-quantity.yml) | `GOOGLE_SHEETS_CLIENT_EMAIL`<br>`GOOGLE_SHEETS_PRIVATE_KEY`<br>`GOOGLE_SHEETS_SPREADSHEET_ID`<br>`GOOGLE_SHEETS_RUNS_SHEET_NAME` (optional)<br>`GOOGLE_SHEETS_RUNS_SHEET_ID` (optional)<br>`GOOGLE_SHEETS_SYNC_PRODUCTS_QUANTITY_SHEET_NAME` (optional)<br>`GOOGLE_SHEETS_SYNC_PRODUCTS_QUANTITY_SHEET_NAME` (optional)<br>`PIM_API_URL`<br>`PIM_API_KEY`<br>`PIM_VERIFY_ENDPOINT`<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_LOCATION_ID`<br>`SHOPIFY_STORE_ID` | Every minute[*](#run-a-workflow-in-shorter-intervals) | [Product Quantity Operations][sync-products-quantity-sheet] |
-
-### Clean Logs
-
-[![](https://github.com/gzeta-adv/shopify/actions/workflows/clean-logs.yml/badge.svg)](https://github.com/gzeta-adv/shopify/actions/workflows/clean-logs.yml)
-
-The action cleans the Google Sheets spreadsheets that store the action logs to respect the [Google usage limits](https://developers.google.com/sheets/api/limits).
-
-| Workflow | Environment | Schedule | Logs |
-| -------- | ----------- | -------- | ---- |
-| [`clean-logs`](.github/workflows/clean-logs.yml) | `GOOGLE_SHEETS_CLIENT_EMAIL`<br>`GOOGLE_SHEETS_PRIVATE_KEY`<br>`GOOGLE_SHEETS_SPREADSHEET_ID`<br>`GOOGLE_SHEETS_RUNS_SHEET` | Every day | [Runs][runs-sheet] |
+| [`sync-products-quantity`](.github/workflows/sync-products-quantity.yml) | `GOOGLE_SHEETS_CLIENT_EMAIL`<br>`GOOGLE_SHEETS_PRIVATE_KEY`<br>`GOOGLE_SHEETS_SPREADSHEET_ID`<br>`GOOGLE_SHEETS_SYNC_PRODUCTS_QUANTITY_SHEET`<br>`PIM_API_URL`<br>`PIM_API_KEY`<br>`PIM_VERIFY_ENDPOINT`<br>`RETRIES` (optional)<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_LOCATION_ID`<br>`SHOPIFY_STORE_ID` | Every minute[*](#run-workflows-in-shorter-intervals) | [Product Quantity Operations][sync-products-quantity-sheet] |
 
 ## Notes
 
-### Run a workflow in shorter intervals
+### Run workflows in shorter intervals
 
 GitHub Actions has a limit of 5 minutes for intervals between workflow runs. To run a workflow every minute, the action needs a `repository_dispatch` event, which can be triggered with the following HTTP request:
 
