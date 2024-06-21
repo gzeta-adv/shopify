@@ -1,11 +1,20 @@
+import { ActionRunPayload, ActionRunRecord, ActionLog, ActionStatus } from '@/types'
 import { BASE_SHARED_ID, BASE_URL, RUNS_TABLE_ID } from './data'
 import { createRecords } from './records'
-import { ActionRunPayload, ActionRunRecord, FieldSet, Record, Records } from './types'
+import { FieldSet, Record, Records } from './types'
 
-import { ActionLog, ActionStatus } from '@/types'
-import { getActionRunLink, isCI, logger, pluck, titleize } from '@/utils'
+import { getActionRunURL, isCI, logger, pluck, titleize } from '@/utils'
 
 const source = isCI ? 'GitHub Actions' : 'Local'
+
+interface AirtableActionRunPayload extends ActionRunPayload {
+  lookup?: string
+}
+
+interface AirtableActionRunRecord extends FieldSet, ActionRunRecord {
+  'Product Quantity Operations'?: string[]
+  'Collection Status Operations'?: string[]
+}
 
 /**
  * Returns the web URL of a given record.
@@ -16,22 +25,22 @@ export const recordUrl = <T extends FieldSet>(record: Record<T>): string =>
 /**
  * Logs a action run using a given payload.
  */
-export const logActionRun = async <T extends ActionRunPayload>(
+export const logActionRun = async <T extends AirtableActionRunPayload>(
   action: string,
   payload: T
-): Promise<Records<ActionRunRecord>> => {
-  const log = {
+): Promise<Records<AirtableActionRunRecord>> => {
+  const log: AirtableActionRunRecord = {
     Date: new Date().toISOString(),
-    Status: payload.status,
+    Status: payload.status || ActionStatus.success,
     Action: action,
     Source: source,
     Event: titleize(payload.event || '', false) || undefined,
-    'GitHub Run': payload.runId ? getActionRunLink(payload.runId) : undefined,
+    'GitHub Run': payload.runId ? getActionRunURL(payload.runId) : undefined,
     Retry: payload.retry || undefined,
     Errors: payload.errors || '',
     Message: payload.message || '',
     Notes: payload.notes || '',
-  } as ActionRunRecord
+  }
 
   if (payload.lookup) log[payload.lookup] = payload.operations
 
@@ -72,23 +81,21 @@ export const logActionRunFromRecords = async <T extends FieldSet>({
   lookup,
   message,
   records,
-  retry,
   runId,
 }: ActionLog<Records<T>>): Promise<void> => {
-  const run: ActionRunRecord = {
+  const run: AirtableActionRunRecord = {
     Date: new Date().toISOString(),
     Status: ActionStatus.success,
     Action: action,
     Source: source,
     Event: titleize(event || '', false) || undefined,
-    'GitHub Run': runId ? getActionRunLink(runId) : undefined,
-    Retry: retry || undefined,
+    'GitHub Run': runId ? getActionRunURL(runId) : undefined,
     Message: message,
   }
 
   if (lookup) run[lookup] = pluck(records || [], 'id')
 
-  await createRecords<ActionRunRecord>({ tableId: RUNS_TABLE_ID, records: [run] })
+  await createRecords<AirtableActionRunRecord>({ tableId: RUNS_TABLE_ID, records: [run] })
 
   if (message) logger.notice(message)
 }

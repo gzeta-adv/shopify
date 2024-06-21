@@ -1,10 +1,10 @@
 import { exit } from 'process'
-import airtable, { FieldSet, PRODUCT_QUANTITY_TABLE_ID, actionLogger } from '@/clients/airtable'
-import shopify, { InventoryItem, LOCATION_ID, Product, ProductVariant, adminDomain } from '@/clients/shopify'
-import { AdjustQuantitiesInput } from '@/clients/shopify/inventory'
+import sheets, { SHEETS, hyperlink } from '@@/google/sheets'
+import shopify, { InventoryItem, LOCATION_ID, Product, ProductVariant, adminDomain } from '@@/shopify'
+import { AdjustQuantitiesInput } from '@@/shopify/inventory/update'
 import pim from '@/clients/pim'
 import { Action, ActionLog, ActionStatus } from '@/types'
-import { logger, pluralize, toID, toPositive } from '@/utils'
+import { formatDate, logger, pluralize, toID, toPositive } from '@/utils'
 
 const ACTION = 'Sync Products Quantity'
 
@@ -13,18 +13,16 @@ const BASE_INPUT = {
   name: 'available',
 }
 
-interface SyncProductsActionLog extends FieldSet {
+interface SyncProductsActionLog {
   Date: string
   Status: ActionStatus
-  'Product ID': number
-  'Product Title': string
-  'Variant ID': number
-  'Variant SKU': string
-  'Variant Name': string
-  'Variant URL': string
+  Product: string
+  Variant: string
   'Previous Quantity': number
   'New Quantity': number
   Delta: number
+  Message?: string
+  Notes?: string
 }
 
 interface Variant extends ProductVariant {
@@ -42,21 +40,22 @@ interface VariantChange {
   delta: number
 }
 
-const variantUrl = (variant: Variant): string =>
-  `https://${adminDomain}/products/${toID(variant.product.id)}/variants/${toID(variant.id)}`
+const productUrl = (product: Product): string => `https://${adminDomain}/products/${toID(product.id)}`
+
+const variantUrl = (variant: Variant): string => `${productUrl(variant.product)}/variants/${toID(variant.id)}`
+
+const variantName = (variant: Variant): string => variant.displayName.replace(`${variant.product.title} - `, '')
 
 const buildSyncProductsActionLog = (change: VariantChange): SyncProductsActionLog => ({
-  Date: change.date || new Date().toISOString(),
+  Date: formatDate(),
   Status: ActionStatus.success,
-  'Product ID': toID(change.variant.product.id),
-  'Product Title': change.variant.product?.title,
-  'Variant ID': toID(change.variant.id),
-  'Variant SKU': change.variant.sku,
-  'Variant Name': change.variant.displayName.replace(`${change.variant.product.title} - `, ''),
-  'Variant URL': variantUrl(change.variant),
+  Product: hyperlink(productUrl(change.variant.product), change.variant.product.title),
+  Variant: hyperlink(variantUrl(change.variant), variantName(change.variant)),
   'Previous Quantity': change.quantities[0],
   'New Quantity': change.quantities[1],
   Delta: change.delta,
+  Message: '',
+  Notes: '',
 })
 
 /**
@@ -83,7 +82,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
     const variants = data?.productVariants?.edges || []
 
     if (!variants.length) {
-      await actionLogger.error({ ...baseLog, message: 'No product variants found' })
+      await sheets.logFailedRun({ ...baseLog, message: 'No product variants found' })
       if (isLastRetry) exit()
       continue
     }
@@ -125,7 +124,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
     })
 
     if (!changes.length) {
-      await actionLogger.skip({ ...baseLog, message: 'No changes' })
+      await sheets.logSkippedRun({ ...baseLog, message: 'No changes' })
       if (isLastRetry) exit()
       continue
     }
@@ -134,7 +133,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
     const { data: adjustData, errors } = await shopify.adjustQuantities({ input })
 
     if (!adjustData || errors) {
-      await actionLogger.error({ ...baseLog, errors, message: 'Shopify API error' })
+      await sheets.logFailedRun({ ...baseLog, errors, message: 'Shopify API error' })
       if (isLastRetry) exit()
       continue
     }
@@ -152,16 +151,15 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
       logs.push(buildSyncProductsActionLog({ ...variantChange, delta: change.delta, date: createdAt }))
     }
 
-    const records = await airtable.createRecords<SyncProductsActionLog>({
-      tableId: PRODUCT_QUANTITY_TABLE_ID,
-      records: logs,
+    const records = await sheets.appendRows<SyncProductsActionLog>({
+      sheet: SHEETS.SyncProductsQuantity.name,
+      values: logs,
     })
-
-    await actionLogger.fromRecords({
+    await sheets.logRun({
       ...baseLog,
-      lookup: 'Product Quantity Operations',
+      status: ActionStatus.success,
       message: `Adjusted quantity of ${logs.length} product ${pluralize('variant', changes.length)}`,
-      records,
+      range: records.updates?.updatedRange,
     })
     exit()
   }

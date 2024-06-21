@@ -1,14 +1,8 @@
 import { exit } from 'process'
-import airtable, { COLLECTION_STATUS_TABLE_ID, FieldSet, actionLogger } from '@/clients/airtable'
-import shopify, {
-  COLLECTION_METAFIELD,
-  RESOURCES_LIMIT,
-  Collection,
-  adminDomain,
-  parseUserErrors,
-} from '@/clients/shopify'
-import { Action, ActionLog, ActionStatus } from '@/types'
-import { logger, toID, titleize } from '@/utils'
+import sheets, { SHEETS, hyperlink } from '@@/google/sheets'
+import shopify, { COLLECTION_METAFIELD, RESOURCES_LIMIT, Collection, adminDomain, parseUserErrors } from '@@/shopify'
+import { Action, ActionRunPayload, ActionStatus } from '@/types'
+import { logger, toID, titleize, formatDate } from '@/utils'
 
 const ACTION = 'Sync Collections Status'
 
@@ -33,18 +27,17 @@ enum PublishAction {
   unpublish = 'unpublish',
 }
 
-interface PublishLog extends FieldSet {
+interface PublishLog {
   Date: string
   Status: ActionStatus
   Action: 'Publish' | 'Unpublish'
-  'Collection ID': number
-  'Collection Title': string
-  'Collection URL': string
+  Collection: string
   Obsolete: boolean
-  'Products Count': number
+  Products: number
   'Previous Publications': number
   'New Publications': number
   Message?: string
+  Notes?: string
 }
 
 interface PublishLogOptions {
@@ -87,23 +80,22 @@ const isObsolete = ({ metafields }: PublishCollection) => {
 }
 
 const createLog = ({ status, action, collection, message, publications, obsolete }: PublishLogOptions): PublishLog => ({
-  Date: new Date().toISOString(),
+  Date: formatDate(),
   Status: titleize(status) as PublishLog['Status'],
   Action: titleize(action) as PublishLog['Action'],
-  'Collection ID': toID(collection.id),
-  'Collection Title': collection.title || '',
-  'Collection URL': `https://${adminDomain}/collections/${toID(collection.id)}`,
+  Collection: hyperlink(`https://${adminDomain}/collections/${toID(collection.id)}`, collection.title),
   Obsolete: obsolete,
-  'Products Count': collection.productsCount.count,
+  Products: collection.productsCount.count,
   'Previous Publications': collection.resourcePublicationsV2.length,
   'New Publications': action === PublishAction.publish ? publications.length : 0,
   Message: message,
+  Notes: '',
 })
 
 const updateCollections = async (
   args: Record<PublishAction, PublishCollection[]>,
   publications: string[],
-  actionLog: ActionLog
+  actionLog: ActionRunPayload
 ): Promise<boolean> => {
   const actions = Object.keys(args) as PublishAction[]
   const logs: PublishLog[] = []
@@ -135,7 +127,7 @@ const updateCollections = async (
         const errors = parseUserErrors(userErrors)
 
         if (errors) {
-          await actionLogger.error({ ...actionLog, errors, message: errors })
+          await sheets.logFailedRun({ ...actionLog, errors, message: errors })
           return false
         }
 
@@ -157,20 +149,19 @@ const updateCollections = async (
 
     logger.notice(`${actionTitle}ed ${updatedCollections.length} out of ${collections.length} collections`)
 
-    const records = await airtable.createRecords<PublishLog>({ tableId: COLLECTION_STATUS_TABLE_ID, records: logs })
-    await actionLogger.fromRecords({
+    const records = await sheets.appendRows<PublishLog>({ sheet: SHEETS.SyncCollectionsStatus.name, values: logs })
+    await sheets.logRun({
       ...actionLog,
-      lookup: 'Collection Status Operations',
+      status: ActionStatus.success,
       message: `${actionTitle}ed ${updatedCollections.length} collections`,
-      records,
+      range: records.updates?.updatedRange,
     })
   }
 
   if (skipped.length === actions.length) {
-    await actionLogger.skip({ ...actionLog, message: 'No changes' })
+    await sheets.logSkippedRun({ ...actionLog, sheet: SHEETS.Runs.name, message: 'No changes' })
     return false
   }
-
   return true
 }
 
@@ -182,7 +173,7 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
     const isLastRetry = i === retries - 1
     const retry = retries > 1 ? `${i + 1}/${retries}` : undefined
 
-    const actionLog: ActionLog = {
+    const actionLog: ActionRunPayload = {
       action: ACTION,
       event,
       retry,
@@ -192,7 +183,7 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
     const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
     const collections = data?.collections?.nodes || []
     if (!collections.length) {
-      await actionLogger.error({ ...actionLog, message: 'No collections found' })
+      await sheets.logFailedRun({ ...actionLog, message: 'No collections found' })
       if (isLastRetry) exit()
       continue
     }
@@ -205,7 +196,7 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
       ),
     ]
     if (!publications.length) {
-      await actionLogger.error({ ...actionLog, message: 'No publications found' })
+      await sheets.logFailedRun({ ...actionLog, message: 'No publications found' })
       if (isLastRetry) exit()
       continue
     }

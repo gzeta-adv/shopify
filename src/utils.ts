@@ -270,4 +270,14 @@ export const repeat = <T, K extends number>(element: T, n: K): Tuple<T, K> => Ar
 /**
  * Returns a link to the given GitHub Actions run.
  */
-export const getActionRunLink = (runId: string): string => `[${runId}](${repositoryUrl}/actions/runs/${runId})`
+export const getActionRunURL = (runId?: string): string => `${repositoryUrl}/actions/runs/${runId}`
+
+/**
+ * Formats a date to a string.
+ */
+export const formatDate = (date: Date = new Date(), time = true): string => {
+  date.setHours(date.getHours() + 2)
+  const [dateString, timeString] = date.toISOString().split('T')
+  if (!time) return dateString
+  return `${dateString} ${timeString.split('.').at(0)}`
+}

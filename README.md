@@ -1,7 +1,7 @@
-[airtable-base]: https://airtable.com/appn0QEUHeYBOQnjc/shrvwYpD6I6E6tHVi
-[airtable-sync-collections-status]: https://airtable.com/appn0QEUHeYBOQnjc/shrvwYpD6I6E6tHVi/tbliM6NaaicZx53j9/viwPnBcbkh04ArnL6
-[airtable-sync-products-quantity]: https://airtable.com/appn0QEUHeYBOQnjc/shrvwYpD6I6E6tHVi/tblopaEqeBGc6rfay/viwV0F3roAuh9NzCv
-[airtable-runs]: https://airtable.com/appn0QEUHeYBOQnjc/shrvwYpD6I6E6tHVi/tbltT0vuYmSENHEaS/viw5LVQulRmhMDEE4
+[spreadsheet]: https://docs.google.com/spreadsheets/d/1T-2g8k8qZdEvTofj0c3ZlloUoXHy0JnwDNXcj_ONHaA
+[sync-collections-status-sheet]: https://docs.google.com/spreadsheets/d/1T-2g8k8qZdEvTofj0c3ZlloUoXHy0JnwDNXcj_ONHaA/edit?gid=1906573394#gid=1906573394
+[sync-products-quantity-sheet]: https://docs.google.com/spreadsheets/d/1T-2g8k8qZdEvTofj0c3ZlloUoXHy0JnwDNXcj_ONHaA/edit?gid=1295517665#gid=1295517665
+[runs-sheet]: https://docs.google.com/spreadsheets/d/1T-2g8k8qZdEvTofj0c3ZlloUoXHy0JnwDNXcj_ONHaA/edit?gid=1397703281#gid=1397703281
 
 # Shopify
 
@@ -32,31 +32,31 @@ Each action is run with a GitHub Actions workflow defined in the `.github/workfl
 
 [![](https://github.com/gzeta-adv/shopify/actions/workflows/sync-collections-status.yml/badge.svg)](https://github.com/gzeta-adv/shopify/actions/workflows/sync-collections-status.yml)
 
-The action synchronizes the publications of a Shopify collection depending on a given metafield and logs the operations in an Airtable table.
+The action synchronizes the publications of a Shopify collection depending on a given metafield and logs the operations in a Google Sheets spreadsheet.
 
 | Workflow | Environment | Schedule | Logs |
 | -------- | ----------- | -------- | ---- |
-| [`sync-collections-status`](.github/workflows/sync-collections-status.yml) | `AIRTABLE_API_KEY`<br>`AIRTABLE_BASE_ID`<br>`AIRTABLE_COLLECTION_STATUS_TABLE_ID`<br>`AIRTABLE_RUNS_TABLE_ID`<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_STORE_ID` | Every 3 hours | [Collection Status Operations][airtable-sync-collections-status] |
+| [`sync-collections-status`](.github/workflows/sync-collections-status.yml) | `GOOGLE_SHEETS_CLIENT_EMAIL`<br>`GOOGLE_SHEETS_PRIVATE_KEY`<br>`GOOGLE_SHEETS_SPREADSHEET_ID`<br>`GOOGLE_SHEETS_RUNS_SHEET_NAME` (optional)<br>`GOOGLE_SHEETS_RUNS_SHEET_ID` (optional)<br>`GOOGLE_SHEETS_SYNC_COLLECTIONS_STATUS_SHEET_NAME` (optional)<br>`GOOGLE_SHEETS_SYNC_COLLECTIONS_STATUS_SHEET_ID` (optional)<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_STORE_ID` | Every 3 hours | [Collection Status Operations][sync-collections-status-sheet] |
 
 ### Sync Products Quantity
 
 [![](https://github.com/gzeta-adv/shopify/actions/workflows/sync-products-quantity.yml/badge.svg)](https://github.com/gzeta-adv/shopify/actions/workflows/sync-products-quantity.yml)
 
-The action synchronizes the quantity of the products in a customer PIM with the quantity in the Shopify store and logs the operations in an Airtable table.
+The action synchronizes the quantity of the products in a customer PIM with the quantity in the Shopify store and logs the operations in a Google Sheets spreadsheet.
 
 | Workflow | Environment | Schedule | Logs |
 | -------- | ----------- | -------- | ---- |
-| [`sync-products-quantity`](.github/workflows/sync-products-quantity.yml) | `AIRTABLE_API_KEY`<br>`AIRTABLE_BASE_ID`<br>`AIRTABLE_PRODUCT_QUANTITY_TABLE_ID`<br>`AIRTABLE_RUNS_TABLE_ID`<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_LOCATION_ID`<br>`SHOPIFY_STORE_ID`<br>`PIM_API_URL`<br>`PIM_API_KEY`<br>`PIM_VERIFY_ENDPOINT` | Every minute[*](#run-a-workflow-in-shorter-intervals) | [Product Quantity Operations][airtable-sync-products-quantity] |
+| [`sync-products-quantity`](.github/workflows/sync-products-quantity.yml) | `GOOGLE_SHEETS_CLIENT_EMAIL`<br>`GOOGLE_SHEETS_PRIVATE_KEY`<br>`GOOGLE_SHEETS_SPREADSHEET_ID`<br>`GOOGLE_SHEETS_RUNS_SHEET_NAME` (optional)<br>`GOOGLE_SHEETS_RUNS_SHEET_ID` (optional)<br>`GOOGLE_SHEETS_SYNC_PRODUCTS_QUANTITY_SHEET_NAME` (optional)<br>`GOOGLE_SHEETS_SYNC_PRODUCTS_QUANTITY_SHEET_NAME` (optional)<br>`PIM_API_URL`<br>`PIM_API_KEY`<br>`PIM_VERIFY_ENDPOINT`<br>`SHOPIFY_ACCESS_TOKEN`<br>`SHOPIFY_LOCATION_ID`<br>`SHOPIFY_STORE_ID` | Every minute[*](#run-a-workflow-in-shorter-intervals) | [Product Quantity Operations][sync-products-quantity-sheet] |
 
-### Clean Airtable
+### Clean Logs
 
-[![](https://github.com/gzeta-adv/shopify/actions/workflows/clean-airtable.yml/badge.svg)](https://github.com/gzeta-adv/shopify/actions/workflows/clean-airtable.yml)
+[![](https://github.com/gzeta-adv/shopify/actions/workflows/clean-logs.yml/badge.svg)](https://github.com/gzeta-adv/shopify/actions/workflows/clean-logs.yml)
 
-The action cleans the Airtable tables that store the logs of the actions (see [Logs](#logs)). Records older than 10 days are deleted.
+The action cleans the Google Sheets spreadsheets that store the action logs to respect the [Google usage limits](https://developers.google.com/sheets/api/limits).
 
 | Workflow | Environment | Schedule | Logs |
 | -------- | ----------- | -------- | ---- |
-| [`clean-airtable`](.github/workflows/clean-airtable.yml) | `AIRTABLE_API_KEY`<br>`AIRTABLE_BASE_ID`<br>`AIRTABLE_RUNS_TABLE_ID` | Every day | [Runs][airtable-runs] |
+| [`clean-logs`](.github/workflows/clean-logs.yml) | `GOOGLE_SHEETS_CLIENT_EMAIL`<br>`GOOGLE_SHEETS_PRIVATE_KEY`<br>`GOOGLE_SHEETS_SPREADSHEET_ID`<br>`GOOGLE_SHEETS_RUNS_SHEET` | Every day | [Runs][runs-sheet] |
 
 ## Notes
 
@@ -72,7 +72,3 @@ curl --request POST \
 ```
 
 The service currently used to send the request every minute is [Google Cloud Scheduler](https://cloud.google.com/scheduler).
-
-### Logs
-
-The logs of all actions are stored in an [Airtable base][airtable-base] that has a limit of 50.000 entries per month. For this reason, the [Runs][airtable-runs] table is **limited to the last 10 days**.

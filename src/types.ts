@@ -1,7 +1,7 @@
 /**
  * Action function signature.
  */
-export type Action = (options: ActionOptions) => Promise<void>
+export type Action = (options: ActionOptions) => Promise<any>
 
 /**
  * The available arguments to initialize an action.
@@ -48,12 +48,47 @@ export interface ActionLog<T = any> {
   action: string
   errors?: any
   event?: string
-  lookup?: 'Product Quantity Operations' | 'Collection Status Operations'
+  lookup?: string
   message?: string
   notes?: string
   records?: T
   retry?: string
   runId?: string
+}
+
+/**
+ * Available parameters to log an action run.
+ */
+export interface ActionRunPayload {
+  status?: ActionStatus
+  action?: string
+  date?: string
+  errors?: any
+  event?: string
+  message?: string
+  notes?: string
+  operations?: string
+  range?: string | null
+  sheet?: string
+  retry?: string
+  runId?: string
+  source?: string
+}
+
+/**
+ * Record of an action run.
+ */
+export interface ActionRunRecord {
+  Date: string
+  Status: ActionStatus
+  Action: string
+  Operations?: string[]
+  Source: string
+  Event?: string
+  'GitHub Run'?: string
+  Errors?: string
+  Message?: string
+  Notes?: string
 }
 
 /**

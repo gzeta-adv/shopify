@@ -10,21 +10,18 @@
   "packageManager": "pnpm@8.10.5",
   "repository": {
     "type": "git",
-    "url": "https://github.com/gzeta-adv/shopify-actions.git"
+    "url": "https://github.com/gzeta-adv/shopify.git"
   },
   "scripts": {
-    "info": "shopify app info",
-    "dev": "shopify app dev",
-    "build": "shopify app build",
-    "deploy": "shopify app deploy",
-    "generate": "shopify app generate",
+    "build": "tsc",
+    "dev": "NODE_ENV=test ts-node src/index.ts",
     "action": "ts-node src/index.ts",
-    "action:test": "NODE_ENV=test ts-node src/index.ts",
     "lint": "eslint src --ext .ts",
     "lint:fix": "eslint src --ext .ts --fix",
     "release": "dotenv release-it"
   },
   "dependencies": {
+    "@googleapis/sheets": "^8.0.0",
     "@shopify/admin-api-client": "^0.2.9",
     "airtable": "^0.12.2",
     "dotenv": "^16.4.5",

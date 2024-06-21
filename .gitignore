@@ -10,3 +10,4 @@ private/
 .env.*
 !.env.example
 *.log
+src/test.ts
