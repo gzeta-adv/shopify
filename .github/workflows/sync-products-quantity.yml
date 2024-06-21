@@ -18,7 +18,7 @@ jobs:
           node-version-file: .node-version
           cache: pnpm
       - run: pnpm install
-      - run: pnpm run action sync-products-quantity --event ${{ github.event_name }} --retries 8 --runId ${{ github.run_id }}
+      - run: pnpm run action sync-products-quantity --event ${{ github.event_name }} --retries ${{ env.RETRIES }} --runId ${{ github.run_id }}
         name: Run action sync-products-quantity
         env:
           GOOGLE_SHEETS_CLIENT_EMAIL: ${{ secrets.GOOGLE_SHEETS_CLIENT_EMAIL }}
@@ -31,3 +31,4 @@ jobs:
           PIM_API_URL: ${{ secrets.PIM_API_URL }}
           PIM_TOKEN: ${{ secrets.PIM_TOKEN }}
           PIM_VERIFY_ENDPOINT: ${{ secrets.PIM_VERIFY_ENDPOINT }}
+          RETRIES: ${{ secrets.RETRIES || 3 }}
