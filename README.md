@@ -60,4 +60,4 @@ curl --request POST \
   --data '{ "event_type": "Sync products quantity" }'
 ```
 
-The service currently used to send the request every minute is [Google Cloud Scheduler](https://cloud.google.com/scheduler).
+The service currently used to send requests every minute is [Google Cloud Scheduler](https://cloud.google.com/scheduler).

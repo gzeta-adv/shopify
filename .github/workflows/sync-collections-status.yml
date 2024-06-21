@@ -5,7 +5,7 @@ on:
   repository_dispatch:
     types: ['Sync collections status']
   schedule:
-    - cron: '0 */3 * * *'
+    - cron: '*/30 * * * *'
 
 jobs:
   sync-collections-status:
