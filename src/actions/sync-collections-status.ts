@@ -157,11 +157,6 @@ const updateCollections = async (
       range: records.updates?.updatedRange,
     })
   }
-
-  if (skipped.length === actions.length) {
-    await sheets.logSkippedRun({ ...actionLog, sheet: SHEETS.Runs.name, message: 'No changes' })
-    return false
-  }
   return true
 }
 

@@ -123,12 +123,6 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
       return variantChange?.quantities[0] === changedVariant?.node.inventoryQuantity
     })
 
-    if (!changes.length) {
-      await sheets.logSkippedRun({ ...baseLog, message: 'No changes' })
-      if (isLastRetry) exit()
-      continue
-    }
-
     const input = { ...BASE_INPUT, changes }
     const { data: adjustData, errors } = await shopify.adjustQuantities({ input })
 
