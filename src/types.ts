@@ -50,7 +50,7 @@ export interface ActionPayload {
   event?: string
   runId?: string
   message?: string
-  errors?: string
+  errors?: any
 }
 
 /**

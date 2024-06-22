@@ -19,7 +19,7 @@ interface SyncCollectionsStatusPayload extends ActionPayload {
 }
 
 interface SyncCollectionsStatusLog {
-  Action?: 'Publish' | 'Unpublish'
+  Action?: 'Publish' | 'Unpublish' | 'None'
   Collection?: string
   Products?: number
   'Previous Publications'?: number
@@ -50,17 +50,20 @@ export const appendActionLog = async <T extends BaseObject>(
   payload: ActionPayload,
   log: T
 ): Promise<AppendRowResponse> => {
+  const hasErrors = Array.isArray(payload.errors) ? !!payload.errors.length : !!payload.errors
+  const event = titleize(payload.event || '', false)
+  const githubRun = payload.runId ? hyperlink(getActionRunURL(payload.runId), payload.runId) : ''
+  const errors = hasErrors ? JSON.stringify(payload.errors) : ''
   const values = [
     {
       Date: formatDate(),
-      Status: payload.status || ActionStatus.success,
+      Status: payload.status,
       Source: source,
-      Event: titleize(payload.event || '', false),
-      'GitHub Run': payload.runId ? hyperlink(getActionRunURL(payload.runId), payload.runId) : '',
+      Event: event,
+      'GitHub Run': githubRun,
       ...log,
       Message: payload.message,
-      Errors: JSON.stringify(payload.errors),
-      Notes: undefined,
+      Errors: errors,
     },
   ]
   const response = await sheets.appendRows({ spreadsheetId: SPREADSHEET_ID, sheet, values })
@@ -73,7 +76,7 @@ export const appendActionLog = async <T extends BaseObject>(
  */
 export const logSyncCollectionsStatus = async (payload: SyncCollectionsStatusPayload) =>
   appendActionLog<SyncCollectionsStatusLog>(SYNC_COLLECTIONS_STATUS_SHEET, payload, {
-    Action: titleize(payload.action || '') as 'Publish' | 'Unpublish',
+    Action: (titleize(payload.action) as 'Publish' | 'Unpublish') || 'None',
     Collection: payload.collection,
     Products: payload.products,
     'Previous Publications': payload.previous,

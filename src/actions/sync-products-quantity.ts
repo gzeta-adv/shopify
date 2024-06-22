@@ -103,7 +103,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
         await sheets.logSyncProductsQuantity({
           ...baseLog,
           status: ActionStatus.failed,
-          errors: JSON.stringify(errors),
+          errors,
           message: 'Shopify API error',
         })
       }

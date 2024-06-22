@@ -1,8 +1,7 @@
-import { exit } from 'process'
 import sheets, { hyperlink } from '@@/google/sheets'
 import shopify, { COLLECTION_METAFIELD, RESOURCES_LIMIT, Collection, adminDomain, parseUserErrors } from '@@/shopify'
 import { Action, ActionPayload, ActionStatus } from '@/types'
-import { logger, toID, titleize } from '@/utils'
+import { exit, logger, toID, titleize } from '@/utils'
 
 interface PublishCollection extends Collection {
   metafields: {
@@ -55,8 +54,6 @@ const isObsolete = ({ metafields }: PublishCollection) => {
   const { value } = metafields.find(({ key }) => key === COLLECTION_METAFIELD) || {}
   return value === 'true'
 }
-const stringifyErrors = <T>(errors: T): string =>
-  Array.isArray(errors) ? (errors.length ? JSON.stringify(errors) : '') : JSON.stringify(errors)
 
 const updateCollections = async (
   args: Record<PublishAction, PublishCollection[]>,
@@ -95,7 +92,7 @@ const updateCollections = async (
           await sheets.logSyncCollectionsStatus({
             ...actionLog,
             status: ActionStatus.failed,
-            message: 'User errors',
+            message: 'Error: user errors',
             errors,
           })
           return false
@@ -104,7 +101,7 @@ const updateCollections = async (
         await sheets.logSyncCollectionsStatus({
           ...logBody,
           status: ActionStatus.failed,
-          message: 'Unknown error',
+          message: 'Error: unknown error',
           errors,
         })
         continue
@@ -112,7 +109,6 @@ const updateCollections = async (
 
       updatedCollections.push(updated)
       logger.info(`✓ ${actionTitle}: ${toID(updated.id)} (${updated.title})`)
-
       await sheets.logSyncCollectionsStatus({ ...logBody, status: ActionStatus.success })
     }
 
@@ -126,22 +122,19 @@ const updateCollections = async (
  * Synchronize the publications of all collections in the Shopify store depending on a boolean metafield.
  */
 export const syncCollectionsStatus: Action = async ({ event, retries, runId }) => {
-  for (const i of Array(retries).keys()) {
-    const isLastRetry = i === retries - 1
-
+  for (const _ of Array(retries).keys()) {
     const actionLog = { event, runId }
 
     const { data, errors } = await shopify.fetchAllCollections<PublishCollection>({ fields })
     const collections = data?.collections?.nodes || []
-    if (!collections.length || errors) {
+    if (!collections.length || (Array.isArray(errors) && errors.length)) {
       await sheets.logSyncCollectionsStatus({
         ...actionLog,
         status: ActionStatus.failed,
-        message: 'No collections found',
-        errors: stringifyErrors(errors),
+        message: 'Error: no collections found',
+        errors,
       })
-      if (isLastRetry) exit()
-      continue
+      exit()
     }
 
     const publications = [
@@ -151,20 +144,19 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
         )
       ),
     ]
-    if (!publications.length || errors) {
+    if (!publications.length || (Array.isArray(errors) && errors.length)) {
       await sheets.logSyncCollectionsStatus({
         ...actionLog,
         status: ActionStatus.failed,
-        message: 'No publications found',
-        errors: JSON.stringify(errors),
+        message: 'Error: no publications found',
+        errors,
       })
-      if (isLastRetry) exit()
-      continue
+      exit()
     }
 
     const publish = collections.filter(col => !isObsolete(col) && countPublications(col) < publications.length)
     const unpublish = collections.filter(col => isObsolete(col) && countPublications(col) > 0)
 
-    if (await updateCollections({ publish, unpublish }, publications, actionLog)) exit()
+    if (await updateCollections({ publish, unpublish }, publications, actionLog)) exit(null, 0)
   }
 }

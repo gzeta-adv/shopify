@@ -79,7 +79,9 @@ export const toID = (shopifyID: string): number => parseInt(shopifyID.split('/')
 /**
  * Convertss a string to title case.
  */
-export const titleize = (string: string, capitalize = true): string => {
+export const titleize = (string?: string, capitalize = true): string => {
+  if (!string) return ''
+
   const title = string
     .replace(/_|-|:/g, ' ')
     .replace(/[A-Z]/g, m => ` ${m}`)
