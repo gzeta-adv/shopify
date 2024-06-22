@@ -7,6 +7,7 @@
     "name": "GZETA",
     "url": "https://gzeta-adv.it"
   },
+  "type": "commonjs",
   "packageManager": "pnpm@8.10.5",
   "repository": {
     "type": "git",
@@ -15,7 +16,7 @@
   "scripts": {
     "prepare": "husky",
     "build": "tsc",
-    "dev": "NODE_ENV=test ts-node src/index.ts",
+    "dev": "NODE_ENV=development ts-node src/index.ts",
     "action": "ts-node src/index.ts",
     "lint": "pnpm lint:code && pnpm lint:commits",
     "lint:code": "eslint src --ext .ts",
@@ -53,6 +54,7 @@
     "prettier": "^3.2.5",
     "release-it": "^17.3.0",
     "ts-node": "^10.9.2",
+    "tsc-alias": "^1.8.10",
     "tsconfig-paths": "^4.2.0",
     "typescript": "^5.4.5"
   }

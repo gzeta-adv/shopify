@@ -55,6 +55,8 @@ const isObsolete = ({ metafields }: PublishCollection) => {
   const { value } = metafields.find(({ key }) => key === COLLECTION_METAFIELD) || {}
   return value === 'true'
 }
+const stringifyErrors = <T>(errors: T): string =>
+  Array.isArray(errors) ? (errors.length ? JSON.stringify(errors) : '') : JSON.stringify(errors)
 
 const updateCollections = async (
   args: Record<PublishAction, PublishCollection[]>,
@@ -93,8 +95,8 @@ const updateCollections = async (
           await sheets.logSyncCollectionsStatus({
             ...actionLog,
             status: ActionStatus.failed,
-            errors,
             message: 'User errors',
+            errors,
           })
           return false
         }
@@ -102,7 +104,8 @@ const updateCollections = async (
         await sheets.logSyncCollectionsStatus({
           ...logBody,
           status: ActionStatus.failed,
-          message: errors || 'Unknown error',
+          message: 'Unknown error',
+          errors,
         })
         continue
       }
@@ -128,13 +131,14 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
 
     const actionLog = { event, runId }
 
-    const { data } = await shopify.fetchAllCollections<PublishCollection>({ fields })
+    const { data, errors } = await shopify.fetchAllCollections<PublishCollection>({ fields })
     const collections = data?.collections?.nodes || []
-    if (!collections.length) {
+    if (!collections.length || errors) {
       await sheets.logSyncCollectionsStatus({
         ...actionLog,
         status: ActionStatus.failed,
         message: 'No collections found',
+        errors: stringifyErrors(errors),
       })
       if (isLastRetry) exit()
       continue
@@ -147,11 +151,12 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
         )
       ),
     ]
-    if (!publications.length) {
+    if (!publications.length || errors) {
       await sheets.logSyncCollectionsStatus({
         ...actionLog,
         status: ActionStatus.failed,
         message: 'No publications found',
+        errors: JSON.stringify(errors),
       })
       if (isLastRetry) exit()
       continue

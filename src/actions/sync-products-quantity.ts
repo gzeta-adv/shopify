@@ -1,5 +1,5 @@
 import sheets, { hyperlink } from '@@/google/sheets'
-import shopify, { InventoryItem, LOCATION_ID, Product, ProductVariant, adminDomain } from '@@/shopify'
+import shopify, { InventoryItem, LOCATION_ID, Product, ProductVariant, adminDomain, isThrottled } from '@@/shopify'
 import { AdjustQuantitiesInput } from '@@/shopify/inventory/update'
 import pim from '@/clients/pim'
 import { Action, ActionPayload, ActionStatus } from '@/types'
@@ -99,12 +99,14 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
     const { data: adjustData, errors } = await shopify.adjustQuantities({ input })
 
     if (!adjustData || errors) {
-      await sheets.logSyncProductsQuantity({
-        ...baseLog,
-        status: ActionStatus.failed,
-        errors: JSON.stringify(errors),
-        message: 'Shopify API error',
-      })
+      if (errors && !isThrottled(errors)) {
+        await sheets.logSyncProductsQuantity({
+          ...baseLog,
+          status: ActionStatus.failed,
+          errors: JSON.stringify(errors),
+          message: 'Shopify API error',
+        })
+      }
       if (isLastRetry) break
       continue
     }

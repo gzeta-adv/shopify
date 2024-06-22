@@ -1,29 +1,24 @@
-/* eslint-disable max-lines */
 import parseArgs from 'yargs-parser'
-import { MAX_ACTION_RETRIES, repositoryUrl } from '@/data'
-import { ActionArgs, ActionEvent, ActionOptions, Tuple } from '@/types'
+import { MAX_RETRIES, RETRIES, repositoryUrl } from '@/data'
+import { ActionArgs, ActionEvent, ActionOptions } from '@/types'
+import pluralize from 'pluralize'
 
 export { default as pluralize } from 'pluralize'
-export { parseArgs }
 
 /**
- * Gets an environment variable or logs an error and exit the process if missing.
+ * Gets an environment variable or a fallback value.
  */
-export const env = (key: string, fallback: any = key): string => {
-  const value = process.env[key]
-  if (value) return value
-  return String(fallback)
-}
-
-/**
- * Checks if the current environment is development.
- */
-export const isDevelopment = env('NODE_ENV') === 'development'
+export const env = <T>(key: string, fallback?: T): string => process.env[key] ?? JSON.stringify(fallback)
 
 /**
  * Checks if the current environment is test.
  */
-export const isTest = env('NODE_ENV') === 'test'
+export const isDevelopment = env('NODE_ENV') === 'development'
+
+/**
+ * Checks if the current environment is CI.
+ */
+export const isCI = env('CI') === 'true' || env('GITHUB_ACTIONS') === 'true'
 
 /**
  * Logs a message and exit the process.
@@ -38,7 +33,7 @@ export const exit = (message?: any, code = 1): void => {
 /**
  * Checks if the current environment is GitHub Actions.
  */
-const isGithubActions = process.env.GITHUB_ACTIONS === 'true'
+const isGithubActions = env('GITHUB_ACTIONS') === 'true'
 
 /**
  * Logger with support for GitHub Actions annotations.
@@ -109,15 +104,6 @@ export const toKebabCase = (s: string): string =>
     .replace(/_/g, () => '-')
 
 /**
- * Converts a string to colon:case.
- */
-export const toColonCase = (s: string): string =>
-  s
-    .replace(/[A-Z]/g, m => `:${m}`)
-    .toLowerCase()
-    .replace(/[_-]/g, () => ':')
-
-/**
  * Converts a string to snake_case.
  */
 export const toSnakeCase = (s: string): string =>
@@ -130,30 +116,6 @@ export const toSnakeCase = (s: string): string =>
  * Capitalizes the first letter of a string.
  */
 export const capitalize = (s: string): string => s.charAt(0).toUpperCase() + s.slice(1)
-
-/**
- * Transforms the keys of an array of objects to a given case.
- */
-export const transformKeys = <T extends Record<string, any>>(
-  array: T[],
-  mode: 'camel' | 'colon' | 'kebab' | 'snake' | 'title' = 'camel'
-): T[] =>
-  array.map(object =>
-    Object.keys(object).reduce((transformed, key) => {
-      const fnName = `to${toCamelCase(mode)}Case`
-
-      if (!Object.hasOwn(global, fnName)) {
-        exit(`Error: ${fnName} is not a valid function`)
-      }
-
-      const fn: (s: string) => string = global[fnName as keyof typeof global]
-
-      return {
-        ...transformed,
-        [fn(key)]: object[key],
-      }
-    }, {} as T)
-  )
 
 /**
  * Resolves nodes from a GraphQL response.
@@ -189,36 +151,29 @@ export const chunks = <T>(array: T[], size: number = 1): T[][] => {
 }
 
 /**
- * Checks if an array includes all the specified values.
- */
-export const includesArray = <T>(array: T[], values: T[]): boolean => values.every(value => array.includes(value))
-
-/**
  * Prints a message with the available actions.
  */
 export const actionsMessage = (actions: Record<string, any>) =>
-  `Available actions: ${Object.keys(actions).map(toKebabCase).sort().join(', ')}`
+  `Available actions are ${sentencize(Object.keys(actions).map(toKebabCase).sort())}.`
 
 /**
  * Prints a message with the available action arguments.
  */
-export const argsMessage = (opt: any) => `
-Unknown arguments${String(opt) ? `: ${opt}` : ''}
+export const argsMessage = (opt: any) => `Error: unknown ${pluralize('argument', opt?.length)} ${opt}
 Available options:
   --event      ${Object.keys(ActionEvent).join(', ')}
-  --retries    0-${MAX_ACTION_RETRIES}
-  --runId      <string>
-`
+  --retries    1-${MAX_RETRIES}
+  --runId      <string>`
 
 /**
  * Parses the action arguments.
  */
 export const parseActionArgs = (args: string[]): ActionOptions => {
-  const retries = parseInt(env('RETRIES', 1))
   const parsed = parseArgs(args)
+  const retriesMsg = `Error: --retries must be a number between 1 and ${MAX_RETRIES}`
 
   const opts = Object.keys(parsed).reduce((acc, key) => {
-    const value = parsed[key]
+    let value = parsed[key]
 
     if (!Object.hasOwn(ActionArgs, key)) {
       if (key === '_') {
@@ -230,49 +185,20 @@ export const parseActionArgs = (args: string[]): ActionOptions => {
     if (key === ActionArgs.event && !Object.hasOwn(ActionEvent, value)) {
       exit(argsMessage(value))
     }
-    if (key === ActionArgs.retries && (isNaN(value) || value < 0 || value > MAX_ACTION_RETRIES)) {
-      exit(argsMessage(value))
+    if (key === ActionArgs.retries) {
+      if (isNaN(value) || value < 1) exit(retriesMsg)
+      value = parseInt(value)
     }
 
     return { ...acc, [key]: value }
   }, {} as ActionOptions)
 
-  if (!opts.event) opts.event = isTest ? ActionEvent.test : ActionEvent.local_dispatch
-  opts.retries = opts.retries || retries
+  if (!opts.event) opts.event = isDevelopment ? ActionEvent.test : ActionEvent.local_dispatch
+  opts.retries = opts.retries || RETRIES
+  if (opts.retries > MAX_RETRIES) exit(retriesMsg)
 
   return opts
 }
-
-/**
- * Sleeps for a given number of milliseconds.
- */
-export const sleep = (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
-
-/**
- * Turns the number to 0 if negative.
- */
-export const toPositive = (n: number): number => (n < 0 ? 0 : n)
-
-/**
- * Builds a URLSearchParams object from an object.
- */
-export const buildURLSearchParams = <T extends Record<any, any>>(params: T): URLSearchParams =>
-  new URLSearchParams(params)
-
-/**
- * Checks if the current environment is CI.
- */
-export const isCI = process.env.CI === 'true' || process.env.GITHUB_ACTIONS === 'true'
-
-/**
- * The source of the event.
- */
-export const eventSource = isCI ? 'GitHub Actions' : 'Local'
-
-/**
- * Creates an array with `n` copies of the given element.
- */
-export const repeat = <T, K extends number>(element: T, n: K): Tuple<T, K> => Array(n).fill(element) as Tuple<T, K>
 
 /**
  * Returns a link to the given GitHub Actions run.

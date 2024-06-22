@@ -7,9 +7,9 @@
     "module": "commonjs",
     "baseUrl": ".",
     "paths": {
-      "~/*": ["./*"],
-      "@/*": ["src/*"],
       "@@/*": ["src/clients/*"],
+      "@/*": ["src/*"],
+      "~/*": ["./*"],
     },
     "outDir": "build",
     "forceConsistentCasingInFileNames": true,

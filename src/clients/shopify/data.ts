@@ -6,6 +6,7 @@ export const LOCATION_ID = env('SHOPIFY_LOCATION_ID', null)
 
 export const API_VERSION = '2024-04'
 export const RESOURCES_LIMIT = 250
+export const THROTTLED_MESSAGE = 'Throttled'
 
 export const adminDomain = `admin.shopify.com/store/${STORE_ID}`
 export const storeDomain = `${STORE_ID}.myshopify.com`
