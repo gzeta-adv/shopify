@@ -1,0 +1,7 @@
+#!/bin/sh
+
+# Load Husky
+. "$(dirname "$0")/_/husky.sh"
+
+# Run CI checks
+pnpm run check

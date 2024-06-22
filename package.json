@@ -13,11 +13,15 @@
     "url": "https://github.com/gzeta-adv/shopify.git"
   },
   "scripts": {
+    "prepare": "husky",
     "build": "tsc",
     "dev": "NODE_ENV=test ts-node src/index.ts",
     "action": "ts-node src/index.ts",
-    "lint": "eslint src --ext .ts",
-    "lint:fix": "eslint src --ext .ts --fix",
+    "lint": "pnpm lint:code && pnpm lint:commits",
+    "lint:code": "eslint src --ext .ts",
+    "lint:code:fix": "eslint src --ext .ts --fix",
+    "lint:commits": "commitlint --from origin/main --to HEAD --verbose",
+    "check": "tsc --noEmit && pnpm run lint",
     "release": "dotenv release-it"
   },
   "dependencies": {
@@ -28,6 +32,8 @@
     "yargs-parser": "^21.1.1"
   },
   "devDependencies": {
+    "@commitlint/cli": "^19.3.0",
+    "@commitlint/config-conventional": "^19.2.2",
     "@release-it/bumper": "^6.0.1",
     "@release-it/conventional-changelog": "^8.0.1",
     "@shopify/cli": "^3.60.1",
@@ -43,6 +49,7 @@
     "eslint-plugin-import": "^2.29.1",
     "eslint-plugin-prefer-arrow": "^1.2.3",
     "eslint-plugin-prettier": "^5.1.3",
+    "husky": "^9.0.11",
     "prettier": "^3.2.5",
     "release-it": "^17.3.0",
     "ts-node": "^10.9.2",
