@@ -28,6 +28,17 @@
     "func-style": [2, "expression"],
     "max-lines": 2,
     "no-console": [1, { "allow": ["error", "time", "timeEnd", "warn"] }],
+     "no-restricted-imports": [
+      2,
+      {
+        "patterns": [
+          {
+            "group": ["../*"],
+            "message": "Usage of relative parent imports is not allowed."
+          }
+        ]
+      }
+    ],
     "no-var": 2,
     "object-curly-spacing": [2, "always"],
     "object-shorthand": [2, "always"],

@@ -12,7 +12,7 @@ export { parseArgs }
 export const env = (key: string, fallback: any = key): string => {
   const value = process.env[key]
   if (value) return value
-  return fallback
+  return String(fallback)
 }
 
 /**
@@ -214,6 +214,7 @@ Available options:
  * Parses the action arguments.
  */
 export const parseActionArgs = (args: string[]): ActionOptions => {
+  const retries = parseInt(env('RETRIES', 1))
   const parsed = parseArgs(args)
 
   const opts = Object.keys(parsed).reduce((acc, key) => {
@@ -237,7 +238,7 @@ export const parseActionArgs = (args: string[]): ActionOptions => {
   }, {} as ActionOptions)
 
   if (!opts.event) opts.event = isTest ? ActionEvent.test : ActionEvent.local_dispatch
-  opts.retries = opts.retries || 1
+  opts.retries = opts.retries || retries
 
   return opts
 }
