@@ -1,9 +1,18 @@
 import sheets, { hyperlink } from '@@/google/sheets'
-import shopify, { COLLECTION_METAFIELD, RESOURCES_LIMIT, Collection, adminDomain, parseUserErrors } from '@@/shopify'
+import shopify, {
+  COLLECTION_METAFIELD,
+  RESOURCES_LIMIT,
+  Collection,
+  adminDomain,
+  parseUserErrors,
+  Shop,
+  storeDomain,
+} from '@@/shopify'
 import { Action, ActionPayload, ActionStatus } from '@/types'
 import { exit, logger, toID, titleize } from '@/utils'
 
 interface PublishCollection extends Collection {
+  handle: string
   metafields: {
     key: string
     value: string
@@ -25,6 +34,7 @@ enum PublishAction {
 }
 
 const fields = `
+  handle
   metafields(first: 1, keys: ["${COLLECTION_METAFIELD}"]) {
     edges {
       node {
@@ -48,17 +58,24 @@ const fields = `
 `
 
 const countPublications = ({ resourcePublicationsV2 }: PublishCollection) => resourcePublicationsV2.length
-const collectionHyperlink = (collection: Collection) =>
-  hyperlink(`https://${adminDomain}/collections/${toID(collection.id)}`, collection.title)
 const isObsolete = ({ metafields }: PublishCollection) => {
   const { value } = metafields.find(({ key }) => key === COLLECTION_METAFIELD) || {}
   return value === 'true'
 }
 
+const collectionHyperlink = (collection: Collection) =>
+  hyperlink(`https://${adminDomain}/collections/${toID(collection.id)}`, collection.title)
+const websiteHyperlink = (collection: PublishCollection, shop?: Shop): string => {
+  const url = `${shop?.url || storeDomain}/collections/${collection.handle}`
+  const name = `${collection.title}${shop?.name ? ` - ${shop.name}` : ''}`
+  return hyperlink(url, name)
+}
+
 const updateCollections = async (
   args: Record<PublishAction, PublishCollection[]>,
   publications: string[],
-  actionLog: ActionPayload
+  shop?: Shop,
+  actionLog: ActionPayload = {}
 ): Promise<boolean> => {
   const actions = Object.keys(args) as PublishAction[]
   const updatedCollections = []
@@ -78,7 +95,8 @@ const updateCollections = async (
       const logBody = {
         ...actionLog,
         action,
-        collection: collectionHyperlink(updated as Collection),
+        collection: collectionHyperlink(updated as PublishCollection),
+        website: websiteHyperlink(updated as PublishCollection, shop),
         products: collection.productsCount.count,
         previous: countPublications(collection),
         new: countPublications(updated as PublishCollection) || 0,
@@ -122,11 +140,14 @@ const updateCollections = async (
  * Synchronize the publications of all collections in the Shopify store depending on a boolean metafield.
  */
 export const syncCollectionsStatus: Action = async ({ event, retries, runId }) => {
+  const shop = await shopify.fetchShop()
+
   for (const _ of Array(retries).keys()) {
     const actionLog = { event, runId }
 
     const { data, errors } = await shopify.fetchAllCollections<PublishCollection>({ fields })
     const collections = data?.collections?.nodes || []
+
     if (!collections.length || (Array.isArray(errors) && errors.length)) {
       await sheets.logSyncCollectionsStatus({
         ...actionLog,
@@ -157,6 +178,6 @@ export const syncCollectionsStatus: Action = async ({ event, retries, runId }) =
     const publish = collections.filter(col => !isObsolete(col) && countPublications(col) < publications.length)
     const unpublish = collections.filter(col => isObsolete(col) && countPublications(col) > 0)
 
-    if (await updateCollections({ publish, unpublish }, publications, actionLog)) exit(null, 0)
+    if (await updateCollections({ publish, unpublish }, publications, shop, actionLog)) exit(null, 0)
   }
 }

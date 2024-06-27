@@ -80,3 +80,12 @@ export interface ProductVariant extends BaseObject {
   inventoryItem?: InventoryItem
   product?: Product
 }
+
+/**
+ * Shopify shop resource.
+ * @see https://shopify.dev/docs/api/admin-graphql/latest/objects/Shop
+ */
+export interface Shop extends BaseObject {
+  name: string
+  url: string
+}

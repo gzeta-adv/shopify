@@ -1,13 +1,28 @@
 import sheets, { hyperlink } from '@@/google/sheets'
-import shopify, { InventoryItem, LOCATION_ID, Product, ProductVariant, adminDomain, isThrottled } from '@@/shopify'
+import shopify, {
+  InventoryItem,
+  LOCATION_ID,
+  Product as ProductBase,
+  ProductVariant,
+  adminDomain,
+  isThrottled,
+} from '@@/shopify'
 import { AdjustQuantitiesInput } from '@@/shopify/inventory/update'
-import pim from '@/clients/pim'
+import pim from '@@/pim'
+
 import { Action, ActionPayload, ActionStatus } from '@/types'
 import { logger, pluralize, toID } from '@/utils'
 
 const BASE_INPUT = {
   reason: 'correction',
   name: 'available',
+}
+
+interface Product extends ProductBase {
+  onlineStoreUrl: string
+  seo: {
+    title: string
+  }
 }
 
 interface Variant extends ProductVariant {
@@ -30,6 +45,11 @@ const productHyperlink = (product: Product) => hyperlink(productUrl(product), pr
 const variantUrl = (variant: Variant): string => `${productUrl(variant.product)}/variants/${toID(variant.id)}`
 const variantName = (variant: Variant): string => variant.displayName.replace(`${variant.product.title} - `, '')
 const variantHyperlink = (variant: Variant) => hyperlink(variantUrl(variant), variantName(variant))
+const websiteUrl = (variant: Variant): string => `${variant.product.onlineStoreUrl}?variant=${toID(variant.id)}`
+const websiteName = (variant: Variant, shopName?: string): string =>
+  `${variant.product.title}${shopName ? ` - ${shopName}` : ''}`
+const websiteHyperlink = (variant: Variant, shopName?: string): string =>
+  hyperlink(websiteUrl(variant), websiteName(variant, shopName))
 
 /**
  * Synchronizes product quantities between the PIM and Shopify.
@@ -42,6 +62,8 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
     const isLastRetry = i === retries - 1
 
     const baseLog: ActionPayload = { event, runId }
+
+    const shop = await shopify.fetchShop()
 
     const location = await shopify.fetchPrimaryLocation()
     const locationId = location?.id || LOCATION_ID
@@ -125,6 +147,7 @@ export const syncProductsQuantity: Action = async ({ event, retries, runId }) =>
         status: ActionStatus.success,
         product: productHyperlink(variantChange.variant.product),
         variant: variantHyperlink(variantChange.variant),
+        website: websiteHyperlink(variantChange.variant, shop.name),
         previous: variantChange.quantities[0],
         new: variantChange.quantities[1],
         delta: change.delta,

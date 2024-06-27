@@ -3,7 +3,22 @@ import { logger, resolveEdges, toID } from '@/utils'
 
 import type { ClientResponse, ProductVariant } from '@/clients/shopify'
 
-const PRODUCT_VARIANT_FIELDS = 'id, sku, displayName, inventoryQuantity, inventoryItem { id }, product { id, title }'
+const PRODUCT_VARIANT_FIELDS = `
+  id, 
+  sku, 
+  displayName, 
+  inventoryQuantity, 
+  inventoryItem {
+    id
+  },
+  product { 
+    id, 
+    title, 
+    onlineStoreUrl
+    seo {
+      title
+    }
+  }`
 
 /**
  * Request options for fetching a single product variant.

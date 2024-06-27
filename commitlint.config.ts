@@ -1,9 +1,7 @@
 import { UserConfig } from '@commitlint/types'
 
-const config: UserConfig = {
+export default {
   extends: ['@commitlint/config-conventional'],
   ignores: [commit => /build\(deps(-dev)?\)/.test(commit)],
   defaultIgnores: true,
-}
-
-export default config
+} as UserConfig

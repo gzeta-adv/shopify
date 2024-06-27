@@ -1,5 +1,5 @@
 import parseArgs from 'yargs-parser'
-import { MAX_RETRIES, RETRIES, repositoryUrl } from '@/data'
+import { MAX_RETRIES, REPOSITORY_URL, RETRIES } from '@/data'
 import { ActionArgs, ActionEvent, ActionOptions } from '@/types'
 import pluralize from 'pluralize'
 
@@ -205,7 +205,7 @@ export const parseActionArgs = (args: string[]): ActionOptions => {
 /**
  * Returns a link to the given GitHub Actions run.
  */
-export const getActionRunURL = (runId?: string): string => `${repositoryUrl}/actions/runs/${runId}`
+export const getActionRunURL = (runId?: string): string => `${REPOSITORY_URL}/actions/runs/${runId}`
 
 /**
  * Pads the specified number with leading zeros and returns it as a string.

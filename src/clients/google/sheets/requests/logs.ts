@@ -13,6 +13,7 @@ const source = isCI ? 'GitHub Actions' : 'Local'
 interface SyncCollectionsStatusPayload extends ActionPayload {
   action?: 'publish' | 'unpublish'
   collection?: string
+  website?: string
   products?: number
   previous?: number
   new?: number
@@ -21,6 +22,7 @@ interface SyncCollectionsStatusPayload extends ActionPayload {
 interface SyncCollectionsStatusLog {
   Action?: 'Publish' | 'Unpublish' | 'None'
   Collection?: string
+  Website?: string
   Products?: number
   'Previous Publications'?: number
   'New Publications'?: number
@@ -29,6 +31,7 @@ interface SyncCollectionsStatusLog {
 interface SyncProductsQuantityPayload extends ActionPayload {
   product?: string
   variant?: string
+  website?: string
   previous?: number
   new?: number
   delta?: number
@@ -37,6 +40,7 @@ interface SyncProductsQuantityPayload extends ActionPayload {
 interface SyncProductsQuantityLog {
   Product?: string
   Variant?: string
+  Website?: string
   'Previous Quantity'?: number
   'New Quantity'?: number
   Delta?: number
@@ -78,6 +82,7 @@ export const logSyncCollectionsStatus = async (payload: SyncCollectionsStatusPay
   appendActionLog<SyncCollectionsStatusLog>(SYNC_COLLECTIONS_STATUS_SHEET, payload, {
     Action: (titleize(payload.action) as 'Publish' | 'Unpublish') || 'None',
     Collection: payload.collection,
+    Website: payload.website,
     Products: payload.products,
     'Previous Publications': payload.previous,
     'New Publications': payload.new,
@@ -90,6 +95,7 @@ export const logSyncProductsQuantity = async (payload: SyncProductsQuantityPaylo
   appendActionLog<SyncProductsQuantityLog>(SYNC_PRODUCTS_QUANTITY_SHEET, payload, {
     Product: payload.product,
     Variant: payload.variant,
+    Website: payload.website,
     'Previous Quantity': payload.previous,
     'New Quantity': payload.new,
     Delta: payload.delta,
