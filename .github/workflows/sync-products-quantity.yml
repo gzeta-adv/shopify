@@ -1,9 +1,10 @@
-name: Sync products quantity
+name: Sync Products Quantity
 
 on:
   workflow_dispatch:
   repository_dispatch:
-    types: ['Sync products quantity']
+    types: ['Sync Products Quantity']
+  workflow_dispatch:
 
 jobs:
   sync-products-quantity:

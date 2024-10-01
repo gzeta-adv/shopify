@@ -1,11 +1,11 @@
-name: Sync collections status
+name: Sync Collections Status
 
 on:
-  workflow_dispatch:
-  repository_dispatch:
-    types: ['Sync collections status']
   schedule:
     - cron: '*/5 * * * *'
+  repository_dispatch:
+      types: ['Sync Collections Status']
+  workflow_dispatch:
 
 jobs:
   sync-collections-status:
