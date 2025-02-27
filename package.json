@@ -1,13 +1,10 @@
 {
   "name": "shopify",
   "version": "1.0.1",
-  "private": true,
-  "license": "UNLICENSED",
   "author": {
     "name": "GZETA",
     "url": "https://gzeta-adv.it"
   },
-  "type": "commonjs",
   "packageManager": "pnpm@8.10.5",
   "repository": {
     "type": "git",
