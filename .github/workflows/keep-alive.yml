@@ -1,8 +1,12 @@
 name: Keep Alive
 
+permissions:
+  actions: write
+  contents: read
+
 on:
   schedule:
-    - cron: '0 0 1/7 * *'
+    - cron: "0 0 1/7 * *"
   workflow_dispatch:
 
 jobs:
@@ -12,5 +16,5 @@ jobs:
       - uses: actions/checkout@v4
       - uses: gautamkrishnar/keepalive-workflow@v2
         with:
-          commit_message: 'build(keep-alive): automated commit'
+          commit_message: "build(keep-alive): automated commit"
           use_api: false
